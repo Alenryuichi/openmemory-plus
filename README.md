@@ -463,16 +463,9 @@ openmemory-plus/
 │   ├── src/
 │   │   ├── commands/      # install, status, doctor
 │   │   └── lib/           # 核心库
-│   └── templates/         # IDE 模板
-├── templates/             # Agent 配置模板
-│   ├── augment/           # Augment AGENTS.md
-│   ├── claude/            # Claude CLAUDE.md
-│   ├── cursor/            # Cursor 规则
-│   ├── gemini/            # Gemini 配置
-│   ├── common/            # 通用 AGENTS.md
-│   └── shared/            # 共享模板 (_omp/ 核心文件)
-├── skills/                # Skill 定义
-│   └── memory-extraction/ # 记忆提取 Skill
+│   └── templates/         # 模板文件
+│       └── shared/        # 共享模板
+│           └── _omp/      # 核心目录模板
 ├── docs/                  # 文档
 │   └── architecture.md    # 架构设计
 ├── AGENTS.md              # AI Agent 配置入口
@@ -481,25 +474,20 @@ openmemory-plus/
 # 安装后在你的项目中生成 (以 Augment 为例):
 your-project/
 ├── _omp/                      # OpenMemory Plus 核心目录 (所有 IDE 共享)
-│   ├── memory/               # 项目级记忆存储
+│   ├── memory/                # 项目级记忆存储
+│   │   ├── project.yaml       # 项目配置 (SSOT)
 │   │   ├── activeContext.md   # 活动上下文
-│   │   ├── productContext.md  # 产品上下文
-│   │   ├── techContext.md     # 技术上下文
-│   │   ├── systemPatterns.md  # 系统模式
-│   │   ├── progress.md        # 进度记录
-│   │   └── projectbrief.md    # 项目简介
+│   │   └── ...                # 其他上下文文件
 │   ├── commands/              # Agent 命令
-│   │   ├── memory.md          # 主命令入口
-│   │   └── memory-actions/    # 7 个子动作
+│   │   └── memory.md          # 主命令入口
+│   ├── workflows/             # 工作流
+│   │   └── memory/            # 记忆管理工作流
 │   └── skills/                # Agent Skills
 │       └── memory-extraction/ # 记忆提取 Skill
 │
-├── .augment/                  # IDE 特定目录
-│   ├── commands/              # 复制自 _omp/commands
-│   ├── skills/                # 复制自 _omp/skills
-│   └── AGENTS.md              # IDE 配置文件
-│
-└── AGENTS.md                  # Agent 配置入口
+└── .augment/                  # IDE 特定目录
+    ├── commands/              # 命令入口 (链接到 _omp)
+    └── skills/                # Skills (链接到 _omp)
 ```
 
 ---

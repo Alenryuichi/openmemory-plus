@@ -445,16 +445,9 @@ openmemory-plus/
 │   ├── src/
 │   │   ├── commands/      # install, status, doctor
 │   │   └── lib/           # Core library
-│   └── templates/         # IDE templates
-├── templates/             # Agent config templates
-│   ├── augment/           # Augment AGENTS.md
-│   ├── claude/            # Claude CLAUDE.md
-│   ├── cursor/            # Cursor rules
-│   ├── gemini/            # Gemini config
-│   ├── common/            # Common AGENTS.md
-│   └── shared/            # Shared templates (_omp/ core files)
-├── skills/                # Skill definitions
-│   └── memory-extraction/ # Memory extraction Skill
+│   └── templates/         # Template files
+│       └── shared/        # Shared templates
+│           └── _omp/      # Core directory template
 ├── docs/                  # Documentation
 │   └── architecture.md    # Architecture design
 ├── AGENTS.md              # AI Agent config entry
@@ -463,25 +456,20 @@ openmemory-plus/
 # After installation in your project (Augment example):
 your-project/
 ├── _omp/                      # OpenMemory Plus core directory (shared by all IDEs)
-│   ├── memory/               # Project-level memory storage
+│   ├── memory/                # Project-level memory storage
+│   │   ├── project.yaml       # Project config (SSOT)
 │   │   ├── activeContext.md   # Active context
-│   │   ├── productContext.md  # Product context
-│   │   ├── techContext.md     # Tech context
-│   │   ├── systemPatterns.md  # System patterns
-│   │   ├── progress.md        # Progress tracking
-│   │   └── projectbrief.md    # Project brief
+│   │   └── ...                # Other context files
 │   ├── commands/              # Agent commands
-│   │   ├── memory.md          # Main command entry
-│   │   └── memory-actions/    # 7 sub-actions
+│   │   └── memory.md          # Main command entry
+│   ├── workflows/             # Workflows
+│   │   └── memory/            # Memory management workflow
 │   └── skills/                # Agent Skills
 │       └── memory-extraction/ # Memory extraction Skill
 │
-├── .augment/                  # IDE-specific directory
-│   ├── commands/              # Copied from _omp/commands
-│   ├── skills/                # Copied from _omp/skills
-│   └── AGENTS.md              # IDE config file
-│
-└── AGENTS.md                  # Agent config entry
+└── .augment/                  # IDE-specific directory
+    ├── commands/              # Command entries (linked to _omp)
+    └── skills/                # Skills (linked to _omp)
 ```
 
 ---
