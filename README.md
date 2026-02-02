@@ -37,7 +37,7 @@
 
 ## 🎯 简介
 
-**OpenMemory Plus** 是一个为 AI Agent 设计的统一记忆管理框架，整合项目级 (`.memory/`) 和用户级 (`openmemory` MCP) 双层记忆系统。
+**OpenMemory Plus** 是一个为 AI Agent 设计的统一记忆管理框架，整合项目级 (`_omp/.memory/`) 和用户级 (`openmemory` MCP) 双层记忆系统。
 
 > **让任何 AI Agent 在 5 分钟内获得持久记忆能力。**
 
@@ -506,7 +506,7 @@ your-project/
 对话/操作 → 信息检测 → 智能分类 → 结构化提取 → 双层存储
      │           │           │            │            │
      ▼           ▼           ▼            ▼            ▼
-  用户输入    关键词匹配   项目 or 用户?   YAML 格式    .memory/
+  用户输入    关键词匹配   项目 or 用户?   YAML 格式    _omp/.memory/
   Agent 输出  模式识别    自动判断        去重去噪     openmemory
 ```
 
