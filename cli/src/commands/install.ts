@@ -3,7 +3,7 @@ import ora from 'ora';
 import inquirer from 'inquirer';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { existsSync, mkdirSync, copyFileSync, writeFileSync, readdirSync } from 'fs';
+import { existsSync, mkdirSync, copyFileSync, writeFileSync, readdirSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { checkAllDependencies, isSystemReady, type SystemStatus } from '../lib/detector.js';
@@ -183,6 +183,13 @@ agent:
 `;
 }
 
+function processTemplate(content: string, projectName: string): string {
+  const now = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  return content
+    .replace(/\{\{PROJECT_NAME\}\}/g, projectName)
+    .replace(/\{\{CREATED_AT\}\}/g, now);
+}
+
 function showMcpConfig(ide: string): void {
   console.log(chalk.bold('\n📋 MCP 配置 (复制到 IDE 配置文件):'));
 
@@ -348,8 +355,21 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   const projectYaml = join(memoryDir, 'project.yaml');
   writeFileSync(projectYaml, generateProjectYaml(projectName));
   console.log(chalk.green('  ✓ 创建 .memory/project.yaml'));
-  
+
   const templatesDir = getTemplatesDir();
+
+  // Copy and process memory bank files
+  const memoryTemplatesDir = join(templatesDir, 'shared', 'memory');
+  if (existsSync(memoryTemplatesDir)) {
+    const memoryFiles = readdirSync(memoryTemplatesDir);
+    for (const file of memoryFiles) {
+      const srcPath = join(memoryTemplatesDir, file);
+      const destPath = join(memoryDir, file);
+      const content = readFileSync(srcPath, 'utf-8');
+      writeFileSync(destPath, processTemplate(content, projectName));
+    }
+    console.log(chalk.green(`  ✓ 创建 .memory/ (${memoryFiles.length} 个核心文件)`));
+  }
   const sharedTemplates = join(templatesDir, 'shared');
   const ideTemplates = join(templatesDir, ide === 'common' ? 'common' : ide!);
 
@@ -357,10 +377,19 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   const commandsDir = join(cwd, config.dir, config.commandsDir);
   mkdirSync(commandsDir, { recursive: true });
   copyDir(join(sharedTemplates, 'commands'), commandsDir);
-  const cmdCount = existsSync(join(sharedTemplates, 'commands')) 
-    ? readdirSync(join(sharedTemplates, 'commands')).length 
+  console.log(chalk.green(`  ✓ 创建 ${config.dir}/${config.commandsDir}/ (memory.md)`));
+
+  // Create and copy memory-actions (sub-actions for /memory command)
+  // Place memory-actions alongside commands directory
+  const commandsParentDir = dirname(join(cwd, config.dir, config.commandsDir));
+  const memoryActionsDir = join(commandsParentDir, 'memory-actions');
+  mkdirSync(memoryActionsDir, { recursive: true });
+  copyDir(join(sharedTemplates, 'memory-actions'), memoryActionsDir);
+  const actionsCount = existsSync(join(sharedTemplates, 'memory-actions'))
+    ? readdirSync(join(sharedTemplates, 'memory-actions')).length
     : 0;
-  console.log(chalk.green(`  ✓ 创建 ${config.dir}/${config.commandsDir}/ (${cmdCount} 个命令)`));
+  const memoryActionsDisplayPath = memoryActionsDir.replace(cwd + '/', '');
+  console.log(chalk.green(`  ✓ 创建 ${memoryActionsDisplayPath}/ (${actionsCount} 个子动作)`));
 
   // Create and copy skills
   const skillsDir = join(cwd, config.dir, config.skillsDir);
@@ -394,8 +423,8 @@ function phase3_showCompletion(ide: string, showMcp: boolean): void {
   
   console.log(chalk.bold('💡 下一步:'));
   console.log(chalk.gray('  1. 在 IDE 中打开项目'));
-  console.log(chalk.gray('  2. 使用 ') + chalk.cyan('/memory') + chalk.gray(' 查看记忆状态'));
-  console.log(chalk.gray('  3. 使用 ') + chalk.cyan('/mem search <query>') + chalk.gray(' 搜索记忆'));
+  console.log(chalk.gray('  2. 使用 ') + chalk.cyan('/memory') + chalk.gray(' 打开记忆管理菜单'));
+  console.log(chalk.gray('  3. 选择操作或用自然语言描述需求'));
   console.log('');
   
   if (showMcp) {

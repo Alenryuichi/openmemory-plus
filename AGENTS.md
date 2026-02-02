@@ -17,6 +17,8 @@
 | `/mem clean` | ROT 清理 | `commands/mem-clean.md` |
 | `/mem extract` | 手动提取 | `commands/mem-extract.md` |
 
+**简化版（推荐）：只需一个命令 `/memory`，其余通过菜单选择或自然语言。**
+
 ## 自动行为
 
 ### 对话开始时

@@ -95,9 +95,13 @@ describe('install command', () => {
       stdio: 'pipe',
     });
 
-    const commands = ['memory.md', 'mem-status.md', 'mem-search.md', 'mem-sync.md', 'mem-clean.md', 'mem-extract.md', 'mem-decay.md', 'mem-graph.md'];
-    for (const cmd of commands) {
-      expect(existsSync(join(TEST_DIR, '.augment', 'commands', cmd))).toBe(true);
+    // Check main command file
+    expect(existsSync(join(TEST_DIR, '.augment', 'commands', 'memory.md'))).toBe(true);
+
+    // Check memory-actions directory
+    const memoryActions = ['status.md', 'search.md', 'sync.md', 'clean.md', 'store.md', 'decay.md', 'graph.md'];
+    for (const action of memoryActions) {
+      expect(existsSync(join(TEST_DIR, '.augment', 'memory-actions', action))).toBe(true);
     }
   });
 });
