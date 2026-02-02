@@ -41,7 +41,8 @@ interface IdeConfig {
 // ============================================================================
 
 const IDE_CONFIGS: Record<string, IdeConfig> = {
-  augment: { dir: '.augment', configFile: 'AGENTS.md', commandsDir: 'commands', skillsDir: 'skills' },
+  // Augment: config at root, commands/skills in .augment/
+  augment: { dir: '.', configFile: 'AGENTS.md', commandsDir: '.augment/commands', skillsDir: '.augment/skills' },
   claude: { dir: '.', configFile: 'CLAUDE.md', commandsDir: '.claude/commands', skillsDir: '.claude/skills' },
   cursor: { dir: '.cursor', configFile: '.cursorrules', commandsDir: 'commands', skillsDir: 'skills' },
   gemini: { dir: '.', configFile: 'gemini.md', commandsDir: '.gemini/commands', skillsDir: '.gemini/skills' },
@@ -548,30 +549,39 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
     }
   }
 
-  // Select IDE
-  let ide = options.ide?.toLowerCase();
-  if (!ide || !IDE_CONFIGS[ide]) {
+  // Select IDE(s) - support multiple selection
+  let selectedIdes: string[] = [];
+
+  if (options.ide) {
+    // Parse comma-separated IDE list from command line
+    selectedIdes = options.ide
+      .toLowerCase()
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => IDE_CONFIGS[s]);
+  }
+
+  if (selectedIdes.length === 0) {
     // Fix Issue #8: Handle non-TTY environment
     if (!isTTY() || isCI()) {
-      ide = 'augment'; // Default to augment in non-interactive mode
-      console.log(chalk.gray(`  使用默认 IDE: ${ide}`));
+      selectedIdes = ['augment']; // Default to augment in non-interactive mode
+      console.log(chalk.gray(`  使用默认 IDE: augment`));
     } else {
-      const { selectedIde } = await inquirer.prompt([
+      const { ides } = await inquirer.prompt([
         {
-          type: 'list',
-          name: 'selectedIde',
-          message: '选择 IDE 类型:',
+          type: 'checkbox',
+          name: 'ides',
+          message: '选择 IDE 类型 (空格选择，回车确认):',
           choices: [
-            { name: 'Augment', value: 'augment' },
+            { name: 'Augment', value: 'augment', checked: true },
             { name: 'Claude Code', value: 'claude' },
             { name: 'Cursor', value: 'cursor' },
             { name: 'Gemini', value: 'gemini' },
             { name: '通用 (AGENTS.md)', value: 'common' },
           ],
-          default: 'augment',
         },
       ]);
-      ide = selectedIde;
+      selectedIdes = ides.length > 0 ? ides : ['augment'];
     }
   }
 
@@ -591,8 +601,6 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
     projectName = name;
   }
 
-  const config = IDE_CONFIGS[ide!];
-
   console.log(chalk.bold('\n📁 创建配置文件...\n'));
 
   // Fix Issue #5: Wrap in try-catch for better error handling
@@ -605,7 +613,6 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   }
 
   const ompTemplates = join(templatesDir, 'shared', '_omp');
-  const ideTemplates = join(templatesDir, ide === 'common' ? 'common' : ide!);
 
   // Create _omp/ directory (core)
   mkdirSync(ompDir, { recursive: true });
@@ -645,34 +652,42 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   const commandsCount = existsSync(join(ompDir, 'commands'))
     ? readdirSync(join(ompDir, 'commands')).filter((f) => f.endsWith('.md')).length
     : 0;
-  const actionsCount = existsSync(join(ompDir, 'commands', 'memory-actions'))
-    ? readdirSync(join(ompDir, 'commands', 'memory-actions')).length
+  const workflowStepsCount = existsSync(join(ompDir, 'workflows', 'memory', 'steps'))
+    ? readdirSync(join(ompDir, 'workflows', 'memory', 'steps')).length
     : 0;
-  console.log(chalk.green(`  ✓ 创建 _omp/commands/ (${commandsCount} 命令, ${actionsCount} 子动作)`));
+  console.log(chalk.green(`  ✓ 创建 _omp/commands/ (${commandsCount} 命令)`));
+  console.log(chalk.green(`  ✓ 创建 _omp/workflows/ (${workflowStepsCount} 步骤)`));
   console.log(chalk.green('  ✓ 创建 _omp/skills/ (memory-extraction)'));
 
-  // Create IDE-specific directory and copy commands/skills
-  const ideDir = join(cwd, config.dir);
+  // Create IDE-specific directories for each selected IDE
+  for (const ide of selectedIdes) {
+    const config = IDE_CONFIGS[ide];
+    if (!config) continue;
 
-  // Create and copy commands to IDE dir
-  const ideCommandsDir = join(cwd, config.dir, config.commandsDir);
-  mkdirSync(ideCommandsDir, { recursive: true });
-  copyDir(join(ompDir, 'commands'), ideCommandsDir);
-  console.log(chalk.green(`  ✓ 复制到 ${config.dir}/${config.commandsDir}/`));
+    const ideDir = join(cwd, config.dir);
+    // Augment and common both use AGENTS.md from common template
+    const ideTemplates = join(templatesDir, ide === 'augment' || ide === 'common' ? 'common' : ide);
 
-  // Create and copy skills to IDE dir
-  const ideSkillsDir = join(cwd, config.dir, config.skillsDir);
-  mkdirSync(ideSkillsDir, { recursive: true });
-  copyDir(join(ompDir, 'skills'), ideSkillsDir);
-  console.log(chalk.green(`  ✓ 复制到 ${config.dir}/${config.skillsDir}/`));
+    // Create and copy commands to IDE dir
+    const ideCommandsDir = join(cwd, config.dir, config.commandsDir);
+    mkdirSync(ideCommandsDir, { recursive: true });
+    copyDir(join(ompDir, 'commands'), ideCommandsDir);
 
-  // Copy IDE-specific config file
-  if (existsSync(ideTemplates)) {
-    copyDir(ideTemplates, ideDir);
-    console.log(chalk.green(`  ✓ 复制 ${config.configFile}`));
+    // Create and copy skills to IDE dir
+    const ideSkillsDir = join(cwd, config.dir, config.skillsDir);
+    mkdirSync(ideSkillsDir, { recursive: true });
+    copyDir(join(ompDir, 'skills'), ideSkillsDir);
+
+    // Copy IDE-specific config file
+    if (existsSync(ideTemplates)) {
+      copyDir(ideTemplates, ideDir);
+    }
+
+    console.log(chalk.green(`  ✓ 配置 ${ide} (${config.dir}/)`));
   }
 
-  return ide!;
+  // Return first IDE for MCP config display
+  return selectedIdes[0];
 }
 
 // ============================================================================
