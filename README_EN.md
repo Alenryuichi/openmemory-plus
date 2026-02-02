@@ -37,7 +37,7 @@
 
 ## 🎯 Introduction
 
-**OpenMemory Plus** is a unified memory management framework for AI Agents, integrating project-level (`_omp/.memory/`) and user-level (`openmemory` MCP) dual-layer memory systems.
+**OpenMemory Plus** is a unified memory management framework for AI Agents, integrating project-level (`_omp/memory/`) and user-level (`openmemory` MCP) dual-layer memory systems.
 
 > **Give any AI Agent persistent memory in 5 minutes.**
 
@@ -149,7 +149,7 @@ Have you experienced these problems?
 
 **With OpenMemory Plus**:
 ```markdown
-<!-- _omp/.memory/techContext.md (auto-generated) -->
+<!-- _omp/memory/techContext.md (auto-generated) -->
 ## Deployment Config
 - Vercel URL: https://my-app.vercel.app
 - Project ID: prj_xxx
@@ -195,7 +195,7 @@ Any project, any IDE, Agent knows your preferences.
 
 **With OpenMemory Plus**:
 ```markdown
-<!-- _omp/.memory/techContext.md (auto-recorded) -->
+<!-- _omp/memory/techContext.md (auto-recorded) -->
 ## Tech Decisions
 
 ### Database Selection (2026-02-01)
@@ -334,7 +334,7 @@ After installation, use in your AI Agent conversations:
 │         ┌──────────────────┼──────────────────┐            │
 │         ↓                                     ↓            │
 │  ┌─────────────────┐              ┌─────────────────┐      │
-│  │ _omp/.memory/   │              │   openmemory    │      │
+│  │ _omp/memory/   │              │   openmemory    │      │
 │  │  (project-level)│              │  (user-level)   │      │
 │  ├─────────────────┤              ├─────────────────┤      │
 │  │ • project.yaml  │              │ • Vector DB     │      │
@@ -349,12 +349,12 @@ After installation, use in your AI Agent conversations:
 
 | Info Type | Storage Location | Examples |
 |-----------|------------------|----------|
-| Project Config | `_omp/.memory/*.md` | Deploy URL, env vars, paths |
-| Tech Decisions | `_omp/.memory/techContext.md` | Framework choices, architecture |
+| Project Config | `_omp/memory/*.md` | Deploy URL, env vars, paths |
+| Tech Decisions | `_omp/memory/techContext.md` | Framework choices, architecture |
 | User Preferences | `openmemory` (MCP) | Language preference, code style |
 | User Skills | `openmemory` (MCP) | Familiar tech stack, experience |
 
-> 💡 **Note**: After installation, project-level memory is stored in `_omp/.memory/` directory, which is added to Git version control.
+> 💡 **Note**: After installation, project-level memory is stored in `_omp/memory/` directory, which is added to Git version control.
 
 ---
 
@@ -463,7 +463,7 @@ openmemory-plus/
 # After installation in your project (Augment example):
 your-project/
 ├── _omp/                      # OpenMemory Plus core directory (shared by all IDEs)
-│   ├── .memory/               # Project-level memory storage
+│   ├── memory/               # Project-level memory storage
 │   │   ├── activeContext.md   # Active context
 │   │   ├── productContext.md  # Product context
 │   │   ├── techContext.md     # Tech context
@@ -523,7 +523,7 @@ You need to install mem0/openmemory MCP first, then use OpenMemory Plus to enhan
 
 | Location | Data Type | Security |
 |----------|-----------|----------|
-| `_omp/.memory/` (local) | Project config, tech decisions | ✅ Local files, Git versioned |
+| `_omp/memory/` (local) | Project config, tech decisions | ✅ Local files, Git versioned |
 | `openmemory` (Qdrant) | User preferences, skills | ✅ Local Docker container |
 
 - All data is on **your local machine**
@@ -560,7 +560,7 @@ npx openmemory-plus install
 
 The wizard will:
 1. Detect existing config
-2. Create `_omp/.memory/` directory
+2. Create `_omp/memory/` directory
 3. Generate IDE config files
 4. Won't overwrite your existing files
 

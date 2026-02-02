@@ -21,16 +21,16 @@ describe('install command', () => {
     }
   });
 
-  it('should create _omp/.memory directory with project.yaml', () => {
+  it('should create _omp/memory directory with project.yaml', () => {
     execSync(`node ${CLI_PATH} install -i augment -y --skip-deps`, {
       cwd: TEST_DIR,
       stdio: 'pipe',
     });
 
-    expect(existsSync(join(TEST_DIR, '_omp', '.memory'))).toBe(true);
-    expect(existsSync(join(TEST_DIR, '_omp', '.memory', 'project.yaml'))).toBe(true);
+    expect(existsSync(join(TEST_DIR, '_omp', 'memory'))).toBe(true);
+    expect(existsSync(join(TEST_DIR, '_omp', 'memory', 'project.yaml'))).toBe(true);
 
-    const content = readFileSync(join(TEST_DIR, '_omp', '.memory', 'project.yaml'), 'utf-8');
+    const content = readFileSync(join(TEST_DIR, '_omp', 'memory', 'project.yaml'), 'utf-8');
     expect(content).toContain('name:');
   });
 

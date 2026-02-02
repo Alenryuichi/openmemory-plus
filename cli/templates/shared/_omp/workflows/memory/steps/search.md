@@ -29,7 +29,7 @@ Call `search_memory_openmemory` with the query:
 
 ### 3. Search Project Memory
 
-Search `_omp/.memory/*.md` and `_omp/.memory/*.yaml` files:
+Search `_omp/memory/*.md` and `_omp/memory/*.yaml` files:
 - Grep for query keywords
 - Match file content
 

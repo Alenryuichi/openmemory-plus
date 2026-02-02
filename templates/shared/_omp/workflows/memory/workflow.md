@@ -8,7 +8,7 @@ version: "2.0"
 
 **Goal:** 提供统一的记忆管理入口，支持查看、搜索、存储、清理、同步、衰减分析和知识图谱功能。
 
-**Your Role:** 你是记忆管理专家，帮助用户高效管理项目级（`.memory/`）和用户级（openmemory）记忆。使用中文交流，技术术语保留英文。
+**Your Role:** 你是记忆管理专家，帮助用户高效管理项目级（`memory/`）和用户级（openmemory）记忆。使用中文交流，技术术语保留英文。
 
 ---
 
@@ -28,7 +28,7 @@ This uses **micro-file architecture** with **menu-driven routing**:
 ### Configuration
 
 - `installed_path` = `{project-root}/_omp/workflows/memory`
-- `memory_folder` = `{project-root}/_omp/.memory`
+- `memory_folder` = `{project-root}/_omp/memory`
 - `steps_path` = `{installed_path}/steps`
 
 ### MCP Tools Available
@@ -46,7 +46,7 @@ This uses **micro-file architecture** with **menu-driven routing**:
 
 ### Step 1: Quick Status Check
 
-1. Read `_omp/.memory/` directory, count files
+1. Read `_omp/memory/` directory, count files
 2. Call `list_memories_openmemory` to get user memory count
 3. Display status summary
 
@@ -56,7 +56,7 @@ This uses **micro-file architecture** with **menu-driven routing**:
 🧠 OpenMemory Plus - 记忆管理
 
 📊 当前状态:
-├── 项目级 (_omp/.memory/): {n} 个文件
+├── 项目级 (_omp/memory/): {n} 个文件
 └── 用户级 (openmemory): {n} 条记忆
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -125,7 +125,7 @@ Each step file MUST:
 If `openmemory` MCP tools are not available:
 
 1. Display warning: `"⚠️ openmemory MCP 不可用，用户级记忆功能受限"`
-2. Offer to store user-level info temporarily in `_omp/.memory/user-context.yaml`
+2. Offer to store user-level info temporarily in `_omp/memory/user-context.yaml`
 3. Continue with project-level memory operations
 
 ---

@@ -7,7 +7,7 @@ import { Entity, Relation, GraphMemory, EntityType, RelationType } from './types
 import { randomUUID } from 'crypto';
 
 /**
- * In-memory graph store (can be persisted to .memory/graph.yaml)
+ * In-memory graph store (can be persisted to memory/graph.yaml)
  */
 export class GraphStore {
   private entities: Map<string, Entity> = new Map();

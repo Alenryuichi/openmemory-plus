@@ -17,7 +17,7 @@ description: 检测项目级和用户级记忆之间的冲突
 
 ### 1. Read Project Memory
 
-Read all files in `_omp/.memory/`:
+Read all files in `_omp/memory/`:
 - Extract key-value pairs from YAML files
 - Extract topics from markdown files
 

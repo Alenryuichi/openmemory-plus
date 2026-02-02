@@ -2,7 +2,7 @@
 
 # Memory YAML Validation Script
 # Usage: ./validate.sh [file|all]
-# Validates _omp/.memory/*.yaml files against JSON Schema
+# Validates _omp/memory/*.yaml files against JSON Schema
 #
 # Dependencies (optional, for full schema validation):
 #   npm install -g ajv-cli
@@ -14,7 +14,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Navigate up to project root: scripts -> memory-extraction -> skills -> _omp -> project_root
 PROJECT_ROOT="${SCRIPT_DIR}/../../../../"
-MEMORY_DIR="${PROJECT_ROOT}/_omp/.memory"
+MEMORY_DIR="${PROJECT_ROOT}/_omp/memory"
 SCHEMA_DIR="${MEMORY_DIR}/schema"
 
 # Colors
@@ -69,14 +69,14 @@ echo ""
 ERRORS=0
 
 # Validate project.yaml
-echo "📁 _omp/.memory/"
+echo "📁 _omp/memory/"
 validate_yaml "${MEMORY_DIR}/project.yaml" "${SCHEMA_DIR}/project.schema.json" || ERRORS=$((ERRORS + 1))
 validate_yaml "${MEMORY_DIR}/decisions.yaml" "${SCHEMA_DIR}/decisions.schema.json" || ERRORS=$((ERRORS + 1))
 validate_yaml "${MEMORY_DIR}/changelog.yaml" "" || ERRORS=$((ERRORS + 1))
 
 # Validate session files
 echo ""
-echo "📁 _omp/.memory/sessions/"
+echo "📁 _omp/memory/sessions/"
 for session_file in "${MEMORY_DIR}"/sessions/*.yaml; do
   if [ -f "$session_file" ]; then
     validate_yaml "$session_file" "${SCHEMA_DIR}/session.schema.json" || ERRORS=$((ERRORS + 1))

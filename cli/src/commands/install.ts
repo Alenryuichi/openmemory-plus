@@ -317,7 +317,7 @@ project:
   description: ""
 
 memory:
-  project_store: "_omp/.memory/"
+  project_store: "_omp/memory/"
   user_store: "openmemory"
 
 classification:
@@ -635,8 +635,8 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   console.log(chalk.green('  ✓ 创建 _omp/ (核心目录)'));
 
   // Process memory template files with project name
-  const ompMemoryDir = join(ompDir, '.memory');
-  // Ensure .memory directory exists (may not be in template)
+  const ompMemoryDir = join(ompDir, 'memory');
+  // Ensure memory directory exists (may not be in template)
   mkdirSync(ompMemoryDir, { recursive: true });
 
   if (existsSync(ompMemoryDir)) {
@@ -655,7 +655,7 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   // Create project.yaml
   const projectYaml = join(ompMemoryDir, 'project.yaml');
   writeFileSync(projectYaml, generateProjectYaml(projectName));
-  console.log(chalk.green('  ✓ 创建 _omp/.memory/project.yaml'));
+  console.log(chalk.green('  ✓ 创建 _omp/memory/project.yaml'));
 
   // Count files
   const commandsCount = existsSync(join(ompDir, 'commands'))

@@ -33,7 +33,7 @@ _omp/                           # OpenMemory Plus 核心目录
 │           └── graph.md
 ├── skills/
 │   └── memory-extraction/      # 自动提取 Skill (含分类规则)
-└── .memory/                    # 项目级记忆
+└── memory/                    # 项目级记忆
     ├── project.yaml            # 项目配置 (SSOT)
     └── *.md                    # 上下文文件
 ```
@@ -43,14 +43,14 @@ _omp/                           # OpenMemory Plus 核心目录
 ### 对话开始时
 
 1. 搜索 `openmemory` 获取用户上下文
-2. 加载 `_omp/.memory/project.yaml` 获取项目配置
+2. 加载 `_omp/memory/project.yaml` 获取项目配置
 3. 融合上下文提供个性化响应
 
 ### 对话结束时
 
 1. 检测有价值信息
 2. 按分类规则路由存储
-3. 项目级 → `_omp/.memory/`
+3. 项目级 → `_omp/memory/`
 4. 用户级 → `openmemory`
 
 ## 分类规则
@@ -61,7 +61,7 @@ _omp/                           # OpenMemory Plus 核心目录
 
 | 存储位置 | 信息类型 |
 |----------|----------|
-| `_omp/.memory/` | 项目配置、技术决策、部署信息 |
+| `_omp/memory/` | 项目配置、技术决策、部署信息 |
 | `openmemory` | 用户偏好、技能、跨项目上下文 |
 
 ## Skill
@@ -95,7 +95,7 @@ Agent 可使用以下 OpenMemory MCP 工具:
 
 当 `openmemory` MCP 不可用时:
 
-1. 用户级信息临时存入 `_omp/.memory/user-context.yaml`
+1. 用户级信息临时存入 `_omp/memory/user-context.yaml`
 2. 提示用户检查 MCP 服务状态
 3. 下次可用时自动同步
 

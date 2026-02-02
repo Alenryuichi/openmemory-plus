@@ -124,7 +124,7 @@ export function updateDecayScores(
   now: Date = new Date()
 ): MemoryMetadata[] {
   return memories.map(memory => ({
-    ...memory,
+    ..memory,
     decayScore: calculateDecayScore(memory, config, now),
   }));
 }

@@ -27,8 +27,8 @@ Analyze content and determine storage location:
 
 | Keywords | Storage | Action |
 |----------|---------|--------|
-| 项目路径, URL, 配置, deploy, domain | `_omp/.memory/` | Write to YAML |
-| 选择, 决定, 使用, 采用 (技术决策) | `_omp/.memory/decisions.yaml` | Append decision |
+| 项目路径, URL, 配置, deploy, domain | `_omp/memory/` | Write to YAML |
+| 选择, 决定, 使用, 采用 (技术决策) | `_omp/memory/decisions.yaml` | Append decision |
 | 喜欢, 偏好, 习惯 (用户偏好) | openmemory | `add_memories_openmemory` |
 | 熟悉, 擅长, 会用 (用户技能) | openmemory | `add_memories_openmemory` |
 | Other | Ask user | - |

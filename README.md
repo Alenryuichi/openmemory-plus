@@ -37,7 +37,7 @@
 
 ## 🎯 简介
 
-**OpenMemory Plus** 是一个为 AI Agent 设计的统一记忆管理框架，整合项目级 (`_omp/.memory/`) 和用户级 (`openmemory` MCP) 双层记忆系统。
+**OpenMemory Plus** 是一个为 AI Agent 设计的统一记忆管理框架，整合项目级 (`_omp/memory/`) 和用户级 (`openmemory` MCP) 双层记忆系统。
 
 > **让任何 AI Agent 在 5 分钟内获得持久记忆能力。**
 
@@ -149,7 +149,7 @@
 
 **使用 OpenMemory Plus**:
 ```markdown
-<!-- _omp/.memory/techContext.md (自动生成) -->
+<!-- _omp/memory/techContext.md (自动生成) -->
 ## 部署配置
 - Vercel URL: https://my-app.vercel.app
 - Project ID: prj_xxx
@@ -195,7 +195,7 @@ openmemory (用户级，跨项目共享):
 
 **使用 OpenMemory Plus**:
 ```markdown
-<!-- _omp/.memory/techContext.md (自动记录) -->
+<!-- _omp/memory/techContext.md (自动记录) -->
 ## 技术决策
 
 ### 数据库选型 (2026-02-01)
@@ -353,7 +353,7 @@ npx openmemory-plus install
 │         ┌──────────────────┼──────────────────┐            │
 │         ↓                                     ↓            │
 │  ┌─────────────────┐              ┌─────────────────┐      │
-│  │ _omp/.memory/   │              │   openmemory    │      │
+│  │ _omp/memory/   │              │   openmemory    │      │
 │  │   (项目级)      │              │   (用户级)      │      │
 │  ├─────────────────┤              ├─────────────────┤      │
 │  │ • project.yaml  │              │ • 向量数据库    │      │
@@ -368,12 +368,12 @@ npx openmemory-plus install
 
 | 信息类型 | 存储位置 | 示例 |
 |----------|----------|------|
-| 项目配置 | `_omp/.memory/*.md` | 部署 URL、环境变量、路径 |
-| 技术决策 | `_omp/.memory/techContext.md` | 框架选择、架构设计 |
+| 项目配置 | `_omp/memory/*.md` | 部署 URL、环境变量、路径 |
+| 技术决策 | `_omp/memory/techContext.md` | 框架选择、架构设计 |
 | 用户偏好 | `openmemory` (MCP) | 语言偏好、代码风格 |
 | 用户技能 | `openmemory` (MCP) | 熟悉的技术栈、经验 |
 
-> 💡 **注意**: 安装后，项目级记忆存储在 `_omp/.memory/` 目录下，该目录会被添加到 Git 版本控制。
+> 💡 **注意**: 安装后，项目级记忆存储在 `_omp/memory/` 目录下，该目录会被添加到 Git 版本控制。
 
 ---
 
@@ -481,7 +481,7 @@ openmemory-plus/
 # 安装后在你的项目中生成 (以 Augment 为例):
 your-project/
 ├── _omp/                      # OpenMemory Plus 核心目录 (所有 IDE 共享)
-│   ├── .memory/               # 项目级记忆存储
+│   ├── memory/               # 项目级记忆存储
 │   │   ├── activeContext.md   # 活动上下文
 │   │   ├── productContext.md  # 产品上下文
 │   │   ├── techContext.md     # 技术上下文
@@ -524,7 +524,7 @@ your-project/
 对话/操作 → 信息检测 → 智能分类 → 结构化提取 → 双层存储
      │           │           │            │            │
      ▼           ▼           ▼            ▼            ▼
-  用户输入    关键词匹配   项目 or 用户?   YAML 格式    _omp/.memory/
+  用户输入    关键词匹配   项目 or 用户?   YAML 格式    _omp/memory/
   Agent 输出  模式识别    自动判断        去重去噪     openmemory
 ```
 
@@ -535,7 +535,7 @@ your-project/
         │
         ▼
    ┌─────────────┐
-   │ 包含项目特定 │──是──▶ _omp/.memory/ (项目级)
+   │ 包含项目特定 │──是──▶ _omp/memory/ (项目级)
    │ 信息？      │        ├── techContext.md
    └─────────────┘        ├── productContext.md
         │ 否              └── activeContext.md
@@ -606,7 +606,7 @@ your-project/
 
 | 存储位置 | 数据类型 | 安全性 |
 |----------|----------|--------|
-| `_omp/.memory/` (本地) | 项目配置、技术决策 | ✅ 本地文件，Git 版本控制 |
+| `_omp/memory/` (本地) | 项目配置、技术决策 | ✅ 本地文件，Git 版本控制 |
 | `openmemory` (Qdrant) | 用户偏好、技能 | ✅ 本地 Docker 容器 |
 
 - 所有数据都在**你的本地机器**上
@@ -643,7 +643,7 @@ npx openmemory-plus install
 
 安装向导会：
 1. 检测现有配置
-2. 创建 `_omp/.memory/` 目录
+2. 创建 `_omp/memory/` 目录
 3. 生成 IDE 配置文件
 4. 不会覆盖你的现有文件
 

@@ -17,7 +17,7 @@ description: 查看项目级和用户级记忆的详细状态
 
 ### 1. Read Project-Level Memory
 
-Read `_omp/.memory/` directory:
+Read `_omp/memory/` directory:
 - List all files with last modified time
 - Count total files
 
@@ -32,7 +32,7 @@ Call `list_memories_openmemory`:
 ```
 📊 记忆系统详细状态
 
-📁 项目级 (_omp/.memory/)
+📁 项目级 (_omp/memory/)
 ├── project.yaml    ({last_modified})
 ├── decisions.yaml  ({last_modified})
 └── ... 共 {n} 个文件

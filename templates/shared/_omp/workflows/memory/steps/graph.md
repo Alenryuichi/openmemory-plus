@@ -17,7 +17,7 @@ description: 查看记忆中的实体关系图谱
 
 ### 1. Read Graph Data
 
-Check for existing `_omp/.memory/graph.yaml`:
+Check for existing `_omp/memory/graph.yaml`:
 - If exists, load entities and relations
 - If not, initialize empty graph
 
