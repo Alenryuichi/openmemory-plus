@@ -19,8 +19,18 @@
 ```
 _omp/                           # OpenMemory Plus 核心目录
 ├── commands/
-│   ├── memory.md               # 主命令入口
-│   └── memory-actions/         # 7 个子动作
+│   └── memory.md               # 轻量入口 (跳转到 workflow)
+├── workflows/
+│   └── memory/
+│       ├── workflow.md         # 主工作流 (含菜单)
+│       └── steps/              # 7 个步骤文件
+│           ├── status.md
+│           ├── search.md
+│           ├── store.md
+│           ├── clean.md
+│           ├── sync.md
+│           ├── decay.md
+│           └── graph.md
 ├── skills/
 │   └── memory-extraction/      # 自动提取 Skill (含分类规则)
 └── .memory/                    # 项目级记忆

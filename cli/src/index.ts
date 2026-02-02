@@ -1,16 +1,37 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { installCommand } from './commands/install.js';
 import { statusCommand } from './commands/status.js';
 import { doctorCommand } from './commands/doctor.js';
+
+// Fix Issue #9: Read version from package.json
+const __dirname = dirname(fileURLToPath(import.meta.url));
+function getVersion(): string {
+  const possiblePaths = [
+    join(__dirname, '..', 'package.json'),
+    join(__dirname, '..', '..', 'package.json'),
+  ];
+  for (const p of possiblePaths) {
+    try {
+      const pkg = JSON.parse(readFileSync(p, 'utf-8'));
+      return pkg.version || '0.0.0';
+    } catch {
+      continue;
+    }
+  }
+  return '0.0.0';
+}
 
 const program = new Command();
 
 program
   .name('openmemory-plus')
   .description('🧠 Agent Memory Management - 让任何 AI Agent 获得持久记忆能力')
-  .version('1.0.0');
+  .version(getVersion());
 
 // Main command: install (unified entry point)
 program
@@ -20,6 +41,7 @@ program
   .option('-i, --ide <type>', 'IDE 类型: augment, claude, cursor, gemini, common')
   .option('--skip-deps', '跳过依赖安装，仅配置项目')
   .option('--show-mcp', '显示 MCP 配置')
+  .option('-f, --force', '强制覆盖已存在的配置文件')
   .action(installCommand);
 
 // Secondary commands (for advanced users)

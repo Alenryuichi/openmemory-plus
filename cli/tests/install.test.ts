@@ -91,19 +91,22 @@ describe('install command', () => {
     expect(output).toContain('openmemory-mcp');
   });
 
-  it('should create 7 memory action commands', () => {
+  it('should create memory workflow with 7 step files', () => {
     execSync(`node ${CLI_PATH} install -i augment -y --skip-deps`, {
       cwd: TEST_DIR,
       stdio: 'pipe',
     });
 
-    // Check main command file
-    expect(existsSync(join(TEST_DIR, '.augment', 'commands', 'memory.md'))).toBe(true);
+    // Check main command file (lightweight entry point)
+    expect(existsSync(join(TEST_DIR, '_omp', 'commands', 'memory.md'))).toBe(true);
 
-    // Check memory-actions directory (now under commands/)
-    const memoryActions = ['status.md', 'search.md', 'sync.md', 'clean.md', 'store.md', 'decay.md', 'graph.md'];
-    for (const action of memoryActions) {
-      expect(existsSync(join(TEST_DIR, '.augment', 'commands', 'memory-actions', action))).toBe(true);
+    // Check workflow structure (BMAD pattern: workflows/memory/steps/)
+    expect(existsSync(join(TEST_DIR, '_omp', 'workflows', 'memory', 'workflow.md'))).toBe(true);
+
+    // Check 7 step files in workflows/memory/steps/
+    const memorySteps = ['status.md', 'search.md', 'sync.md', 'clean.md', 'store.md', 'decay.md', 'graph.md'];
+    for (const step of memorySteps) {
+      expect(existsSync(join(TEST_DIR, '_omp', 'workflows', 'memory', 'steps', step))).toBe(true);
     }
   });
 });
