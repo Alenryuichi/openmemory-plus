@@ -1,0 +1,73 @@
+---
+name: '{{cliName}}'
+description: '{{cliDescription}}'
+location: '.augment/skills/{{cliName}}/SKILL.md'
+---
+
+# {{cliName}} Skill
+
+## Triggers
+
+Use this skill when:
+- User mentions "{{cliName}}"
+- User wants to {{primaryUseCase}}
+- Keywords: {{keywords}}
+
+## Capabilities
+
+{{#each capabilities}}
+- {{this}}
+{{/each}}
+
+## 使用前检查 (Agent 必读)
+
+**每次使用前必须先检查 CLI 是否可用：**
+
+```bash
+# 1. 检查是否已全局安装
+which {{cliName}}
+
+# 2. 如果返回路径 (如 /opt/homebrew/bin/{{cliName}})，直接使用
+# 3. 如果返回空或 "not found"，先安装：
+cd {{cliSourcePath}} && npm run build && npm link
+
+# 4. 安装后回到项目根目录使用
+{{cliName}} --version
+```
+
+⚠️ **禁止行为：** 不要 cd 到源码目录用 `npx ts-node` 运行，应该全局安装后直接使用 `{{cliName}}` 命令。
+
+## Quick Reference
+
+**Entry Point:** `{{cliName}} <command>`
+
+**Available Commands:**
+{{#each commands}}
+- `{{name}}` - {{description}}
+{{/each}}
+
+## Usage Examples
+
+```bash
+# Basic usage
+{{cliName}} {{primaryCommand}}
+
+# With options
+{{cliName}} {{primaryCommand}} --verbose
+
+# JSON output for AI
+{{cliName}} {{primaryCommand}} --json
+```
+
+## Agent Integration
+
+- **Verify installation:** `which {{cliName}}` (必须先执行!)
+- **JSON output:** Use `--json` flag for structured output
+- **Help:** `{{cliName}} --help` or `{{cliName}} <command> --help`
+
+## Documentation
+
+- Quick Start: @{{cliName}}/README.md
+- Command Reference: @.augment/commands/{{cliName}}.md
+- Full Docs: @{{cliName}}/docs/
+

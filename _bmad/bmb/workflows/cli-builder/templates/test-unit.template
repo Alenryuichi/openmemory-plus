@@ -1,0 +1,86 @@
+/**
+ * Unit tests for {{commandName}} command
+ */
+
+const {{commandName}}Command = require('../../lib/commands/{{commandName}}');
+
+// Mock logger
+global.logger = {
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn()
+};
+
+describe('{{commandName}} command', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('successful execution', () => {
+    it('should execute with valid parameters', async () => {
+      const options = { parent: { opts: () => ({ json: false }) } };
+      
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      
+      await {{commandName}}Command({{#each params}}'test-{{name}}', {{/each}}options);
+      
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should output JSON when --json flag is set', async () => {
+      const options = { parent: { opts: () => ({ json: true }) } };
+      
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      
+      await {{commandName}}Command({{#each params}}'test-{{name}}', {{/each}}options);
+      
+      const output = consoleSpy.mock.calls[0][0];
+      const parsed = JSON.parse(output);
+      
+      expect(parsed.success).toBe(true);
+      expect(parsed.command).toBe('{{commandName}}');
+      
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('error handling', () => {
+    {{#each params}}
+    {{#if required}}
+    it('should fail when {{name}} is missing', async () => {
+      const options = { parent: { opts: () => ({ json: false }) } };
+      const exitSpy = jest.spyOn(process, 'exit').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      
+      await {{../commandName}}Command(undefined, options);
+      
+      expect(exitSpy).toHaveBeenCalledWith(1);
+      
+      exitSpy.mockRestore();
+      consoleSpy.mockRestore();
+    });
+    {{/if}}
+    {{/each}}
+
+    it('should output JSON error when --json flag is set and error occurs', async () => {
+      const options = { parent: { opts: () => ({ json: true }) } };
+      const exitSpy = jest.spyOn(process, 'exit').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      
+      // Trigger error by passing invalid input
+      await {{commandName}}Command(undefined, options);
+      
+      const output = consoleSpy.mock.calls[0]?.[0];
+      if (output) {
+        const parsed = JSON.parse(output);
+        expect(parsed.success).toBe(false);
+      }
+      
+      exitSpy.mockRestore();
+      consoleSpy.mockRestore();
+    });
+  });
+});
+

@@ -1,0 +1,36 @@
+---
+name: '{{cliName}}'
+description: '{{cliDescription}}'
+cli-executable: '{{cliName}}'
+---
+
+# {{cliName}}
+
+## Quick Usage
+
+```
+{{cliName}} <command> [options]
+```
+
+## Commands
+
+{{#each commands}}
+- `{{name}}`: {{description}}
+{{/each}}
+
+## Global Options
+
+- `--help`: Show help
+- `--json`: JSON output
+- `--verbose`: Verbose mode
+
+## Agent Notes
+
+- Verify: `which {{cliName}}`
+- JSON: Always use `--json`
+- Help: `{{cliName}} --help`
+
+## Docs
+
+@{{cliName}}/README.md | @{{cliName}}/docs/
+

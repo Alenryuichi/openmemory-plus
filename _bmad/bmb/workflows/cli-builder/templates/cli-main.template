@@ -1,0 +1,76 @@
+#!/usr/bin/env node
+
+/**
+ * {{cliName}} - {{cliDescription}}
+ * 
+ * AI-Agent friendly CLI with JSON output support.
+ */
+
+const { Command } = require('commander');
+const { version } = require('./package.json');
+
+// Import commands
+{{#each commands}}
+const {{name}}Command = require('./lib/commands/{{name}}');
+{{/each}}
+
+// Import utilities
+const { createLogger } = require('./lib/utils/logger');
+const { formatOutput } = require('./lib/utils/output');
+
+const program = new Command();
+
+// Global options
+program
+  .name('{{cliName}}')
+  .description('{{cliDescription}}')
+  .version(version, '-v, --version', 'Display version number')
+  .option('--json', 'Output as JSON (for AI Agents)')
+  .option('--verbose', 'Enable verbose output')
+  .option('--quiet', 'Suppress all output except errors');
+
+// Initialize logger based on options
+program.hook('preAction', (thisCommand) => {
+  const opts = thisCommand.opts();
+  global.logger = createLogger({
+    verbose: opts.verbose,
+    quiet: opts.quiet,
+    json: opts.json
+  });
+});
+
+// Register commands
+{{#each commands}}
+program
+  .command('{{name}}')
+  .description('{{description}}')
+  {{#each params}}
+  .argument('{{#if required}}<{{name}}>{{else}}[{{name}}]{{/if}}', '{{description}}')
+  {{/each}}
+  {{#each options}}
+  .option('{{flag}}', '{{description}}')
+  {{/each}}
+  .action({{name}}Command);
+
+{{/each}}
+
+// Error handling
+program.exitOverride((err) => {
+  if (program.opts().json) {
+    console.log(JSON.stringify({
+      success: false,
+      error: err.message,
+      code: err.code
+    }));
+  }
+  process.exit(err.exitCode);
+});
+
+// Parse arguments
+program.parse(process.argv);
+
+// Show help if no command provided
+if (!process.argv.slice(2).length) {
+  program.outputHelp();
+}
+

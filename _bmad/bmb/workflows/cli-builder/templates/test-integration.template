@@ -1,0 +1,82 @@
+/**
+ * Integration tests for {{cliName}} CLI
+ */
+
+const { execSync } = require('child_process');
+const path = require('path');
+
+const CLI_PATH = path.join(__dirname, '../../cli.js');
+
+function runCLI(args = '') {
+  try {
+    const output = execSync(`node ${CLI_PATH} ${args}`, {
+      encoding: 'utf-8',
+      timeout: 10000
+    });
+    return { success: true, output };
+  } catch (error) {
+    return { 
+      success: false, 
+      output: error.stdout || '',
+      error: error.stderr || error.message,
+      exitCode: error.status
+    };
+  }
+}
+
+describe('{{cliName}} CLI Integration', () => {
+  describe('global options', () => {
+    it('should display help with --help', () => {
+      const result = runCLI('--help');
+      expect(result.success).toBe(true);
+      expect(result.output).toContain('Usage:');
+      expect(result.output).toContain('{{cliName}}');
+    });
+
+    it('should display version with --version', () => {
+      const result = runCLI('--version');
+      expect(result.success).toBe(true);
+      expect(result.output).toMatch(/\d+\.\d+\.\d+/);
+    });
+
+    it('should output JSON with --json flag', () => {
+      const result = runCLI('{{primaryCommand}} --json');
+      if (result.success) {
+        const parsed = JSON.parse(result.output);
+        expect(parsed).toHaveProperty('success');
+      }
+    });
+  });
+
+  describe('commands', () => {
+    {{#each commands}}
+    describe('{{name}} command', () => {
+      it('should display help for {{name}}', () => {
+        const result = runCLI('{{name}} --help');
+        expect(result.success).toBe(true);
+        expect(result.output).toContain('{{name}}');
+      });
+
+      it('should execute {{name}} successfully', () => {
+        const result = runCLI('{{name}} {{#each params}}test-{{name}} {{/each}}');
+        // Adjust expectation based on command requirements
+        expect(result.output).toBeDefined();
+      });
+    });
+
+    {{/each}}
+  });
+
+  describe('error handling', () => {
+    it('should handle unknown commands gracefully', () => {
+      const result = runCLI('unknown-command');
+      expect(result.success).toBe(false);
+    });
+
+    it('should exit with code 1 on error', () => {
+      const result = runCLI('invalid --bad-option');
+      expect(result.exitCode).toBe(1);
+    });
+  });
+});
+

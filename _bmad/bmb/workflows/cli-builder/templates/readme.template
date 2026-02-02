@@ -1,0 +1,120 @@
+# {{cliName}}
+
+{{cliDescription}}
+
+## Quick Start
+
+### Installation
+
+**从源码安装 (开发模式):**
+
+```bash
+# 进入 CLI 目录
+cd {{cliSourcePath}}
+
+# 安装依赖并构建
+npm install
+npm run build
+
+# 全局链接
+npm link
+
+# 验证安装
+which {{cliName}}  # 应返回路径如 /opt/homebrew/bin/{{cliName}}
+```
+
+**从 npm 安装 (发布后):**
+
+```bash
+npm install -g {{cliName}}
+```
+
+### 使用前检查 (Agent 必读)
+
+```bash
+# 检查是否已安装
+which {{cliName}}
+
+# 如果未安装，执行上述安装步骤
+# 安装后直接使用，无需 cd 到源码目录
+```
+
+⚠️ **注意：** 不要使用 `npx ts-node src/cli.ts` 方式运行，应该全局安装后直接使用 `{{cliName}}` 命令。
+
+### Basic Usage
+
+```bash
+# Show help
+{{cliName}} --help
+
+# Show version
+{{cliName}} --version
+
+# Run a command
+{{cliName}} {{primaryCommand}}
+```
+
+## Commands
+
+{{#each commands}}
+### {{name}}
+
+{{description}}
+
+```bash
+{{../cliName}} {{name}} {{#each params}}{{#if required}}<{{name}}>{{else}}[{{name}}]{{/if}} {{/each}}{{#each options}}[{{flag}}] {{/each}}
+```
+
+{{#if params}}
+**Parameters:**
+{{#each params}}
+- `{{name}}` {{#if required}}(required){{else}}(optional){{/if}} - {{description}}
+{{/each}}
+{{/if}}
+
+{{#if options}}
+**Options:**
+{{#each options}}
+- `{{flag}}` - {{description}}
+{{/each}}
+{{/if}}
+
+{{/each}}
+
+## Global Options
+
+| Option | Description |
+|--------|-------------|
+| `--help, -h` | Show help information |
+| `--version, -v` | Show version number |
+| `--json` | Output as JSON (for AI Agents) |
+| `--verbose` | Enable verbose output |
+| `--quiet` | Suppress output except errors |
+
+## AI Agent Integration
+
+This CLI is designed for AI Agent usage:
+
+```bash
+# Get structured output
+{{cliName}} {{primaryCommand}} --json
+
+# Example output
+{
+  "success": true,
+  "command": "{{primaryCommand}}",
+  "result": { ... }
+}
+```
+
+## Documentation
+
+- [Usage Guide](./docs/usage.md)
+- [API Reference](./docs/api.md)
+- [Troubleshooting](./docs/troubleshooting.md)
+- [Advanced Usage](./docs/advanced.md)
+
+## License
+
+MIT
+

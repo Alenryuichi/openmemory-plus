@@ -1,0 +1,90 @@
+/**
+ * Output formatting utility for {{cliName}}
+ * 
+ * Provides consistent output formatting for CLI results.
+ */
+
+/**
+ * Format output for display
+ * @param {Object} result - Result object to format
+ * @param {Object} options - Formatting options
+ */
+function formatOutput(result, options = {}) {
+  const { indent = 2, colors = true } = options;
+  
+  if (typeof result === 'string') {
+    return result;
+  }
+  
+  const lines = [];
+  
+  if (result.success !== undefined) {
+    lines.push(result.success ? '✅ Success' : '❌ Failed');
+  }
+  
+  if (result.message) {
+    lines.push(`\n${result.message}`);
+  }
+  
+  if (result.data) {
+    lines.push('\nData:');
+    lines.push(formatData(result.data, indent));
+  }
+  
+  return lines.join('\n');
+}
+
+/**
+ * Format data object for display
+ * @param {Object} data - Data to format
+ * @param {number} indent - Indentation level
+ */
+function formatData(data, indent = 2) {
+  if (Array.isArray(data)) {
+    return data.map((item, i) => `  ${i + 1}. ${formatValue(item)}`).join('\n');
+  }
+  
+  return Object.entries(data)
+    .map(([key, value]) => `  ${key}: ${formatValue(value)}`)
+    .join('\n');
+}
+
+/**
+ * Format a single value
+ * @param {*} value - Value to format
+ */
+function formatValue(value) {
+  if (value === null || value === undefined) {
+    return '-';
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+/**
+ * Create a table from data
+ * @param {Array} rows - Array of row objects
+ * @param {Array} columns - Column definitions
+ */
+function formatTable(rows, columns) {
+  if (!rows || rows.length === 0) {
+    return 'No data';
+  }
+  
+  const colWidths = columns.map(col => 
+    Math.max(col.header.length, ...rows.map(r => String(r[col.key] || '').length))
+  );
+  
+  const header = columns.map((col, i) => col.header.padEnd(colWidths[i])).join(' | ');
+  const separator = colWidths.map(w => '-'.repeat(w)).join('-+-');
+  const body = rows.map(row => 
+    columns.map((col, i) => String(row[col.key] || '').padEnd(colWidths[i])).join(' | ')
+  ).join('\n');
+  
+  return `${header}\n${separator}\n${body}`;
+}
+
+module.exports = { formatOutput, formatData, formatValue, formatTable };
+

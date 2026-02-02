@@ -1,0 +1,68 @@
+/**
+ * {{commandName}} command handler
+ * 
+ * {{commandDescription}}
+ */
+
+const { formatOutput } = require('../utils/output');
+
+/**
+ * Execute the {{commandName}} command
+ * {{#each params}}
+ * @param {string} {{name}} - {{description}}
+ * {{/each}}
+ * @param {Object} options - Command options
+ */
+async function {{commandName}}Command({{#each params}}{{name}}, {{/each}}options) {
+  const { json } = options.parent?.opts() || {};
+  
+  try {
+    global.logger?.info(`Executing {{commandName}} command...`);
+    
+    // Validate inputs
+    {{#each params}}
+    {{#if required}}
+    if (!{{name}}) {
+      throw new Error('{{name}} is required');
+    }
+    {{/if}}
+    {{/each}}
+    
+    // TODO: Implement command logic
+    const result = {
+      success: true,
+      command: '{{commandName}}',
+      {{#each params}}
+      {{name}}: {{name}},
+      {{/each}}
+      timestamp: new Date().toISOString()
+    };
+    
+    // Output result
+    if (json) {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      console.log(formatOutput(result));
+    }
+    
+    return result;
+    
+  } catch (error) {
+    global.logger?.error(`{{commandName}} failed: ${error.message}`);
+    
+    if (json) {
+      console.log(JSON.stringify({
+        success: false,
+        command: '{{commandName}}',
+        error: error.message
+      }));
+    } else {
+      console.error(`Error: ${error.message}`);
+    }
+    
+    process.exit(1);
+  }
+}
+
+module.exports = {{commandName}}Command;
+

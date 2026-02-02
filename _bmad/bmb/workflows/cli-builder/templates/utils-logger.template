@@ -1,0 +1,60 @@
+/**
+ * Logger utility for {{cliName}}
+ * 
+ * Provides consistent logging with verbose/quiet modes.
+ */
+
+const LOG_LEVELS = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  debug: 3
+};
+
+/**
+ * Create a logger instance
+ * @param {Object} options - Logger options
+ * @param {boolean} options.verbose - Enable verbose output
+ * @param {boolean} options.quiet - Suppress output except errors
+ * @param {boolean} options.json - JSON output mode
+ */
+function createLogger(options = {}) {
+  const { verbose = false, quiet = false, json = false } = options;
+  
+  const level = quiet ? LOG_LEVELS.error : (verbose ? LOG_LEVELS.debug : LOG_LEVELS.info);
+  
+  function log(logLevel, message, data = null) {
+    if (LOG_LEVELS[logLevel] > level) return;
+    
+    if (json) {
+      console.log(JSON.stringify({
+        level: logLevel,
+        message,
+        data,
+        timestamp: new Date().toISOString()
+      }));
+    } else {
+      const prefix = {
+        error: '❌',
+        warn: '⚠️',
+        info: 'ℹ️',
+        debug: '🔍'
+      }[logLevel] || '';
+      
+      console.log(`${prefix} ${message}`);
+      if (data && verbose) {
+        console.log(JSON.stringify(data, null, 2));
+      }
+    }
+  }
+  
+  return {
+    error: (msg, data) => log('error', msg, data),
+    warn: (msg, data) => log('warn', msg, data),
+    info: (msg, data) => log('info', msg, data),
+    debug: (msg, data) => log('debug', msg, data)
+  };
+}
+
+module.exports = { createLogger, LOG_LEVELS };
+
