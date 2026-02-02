@@ -7,9 +7,9 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]
@@ -35,4 +35,33 @@ jobs:
       - name: Check CLI runs
         working-directory: cli
         run: node dist/index.js --help
+
+      - name: Run tests
+        working-directory: cli
+        run: npm test
+
+      - name: Run tests with coverage
+        if: matrix.node-version == '20.x'
+        working-directory: cli
+        run: npm run test:coverage
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: cli/package-lock.json
+
+      - name: Install dependencies
+        working-directory: cli
+        run: npm ci
+
+      - name: TypeScript check
+        working-directory: cli
+        run: npx tsc --noEmit
 
