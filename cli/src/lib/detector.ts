@@ -123,10 +123,10 @@ export async function checkAllDependencies(): Promise<SystemStatus> {
 
 export function isSystemReady(status: SystemStatus): boolean {
   return (
-    status.docker.installed && status.docker.running &&
-    status.ollama.installed && status.ollama.running &&
-    status.qdrant.running &&
-    status.bgeM3.installed
+    status.docker.installed === true && status.docker.running === true &&
+    status.ollama.installed === true && status.ollama.running === true &&
+    status.qdrant.running === true &&
+    status.bgeM3.installed === true
   );
 }
 

@@ -134,15 +134,22 @@ function getTemplatesDir(): string {
 }
 
 function copyDir(src: string, dest: string): void {
-  if (!existsSync(src)) return;
+  if (!existsSync(src)) {
+    console.warn(chalk.yellow(`  ⚠ 源目录不存在: ${src}`));
+    return;
+  }
   mkdirSync(dest, { recursive: true });
   for (const file of readdirSync(src, { withFileTypes: true })) {
     const srcPath = join(src, file.name);
     const destPath = join(dest, file.name);
-    if (file.isDirectory()) {
-      copyDir(srcPath, destPath);
-    } else {
-      copyFileSync(srcPath, destPath);
+    try {
+      if (file.isDirectory()) {
+        copyDir(srcPath, destPath);
+      } else {
+        copyFileSync(srcPath, destPath);
+      }
+    } catch (err) {
+      console.warn(chalk.yellow(`  ⚠ 复制失败: ${srcPath}`));
     }
   }
 }
