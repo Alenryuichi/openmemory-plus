@@ -21,16 +21,16 @@ describe('install command', () => {
     }
   });
 
-  it('should create .memory directory with project.yaml', () => {
+  it('should create _omp/.memory directory with project.yaml', () => {
     execSync(`node ${CLI_PATH} install -i augment -y --skip-deps`, {
       cwd: TEST_DIR,
       stdio: 'pipe',
     });
 
-    expect(existsSync(join(TEST_DIR, '.memory'))).toBe(true);
-    expect(existsSync(join(TEST_DIR, '.memory', 'project.yaml'))).toBe(true);
+    expect(existsSync(join(TEST_DIR, '_omp', '.memory'))).toBe(true);
+    expect(existsSync(join(TEST_DIR, '_omp', '.memory', 'project.yaml'))).toBe(true);
 
-    const content = readFileSync(join(TEST_DIR, '.memory', 'project.yaml'), 'utf-8');
+    const content = readFileSync(join(TEST_DIR, '_omp', '.memory', 'project.yaml'), 'utf-8');
     expect(content).toContain('name:');
   });
 
@@ -43,7 +43,9 @@ describe('install command', () => {
     expect(existsSync(join(TEST_DIR, '.augment', 'AGENTS.md'))).toBe(true);
     expect(existsSync(join(TEST_DIR, '.augment', 'commands', 'memory.md'))).toBe(true);
     expect(existsSync(join(TEST_DIR, '.augment', 'skills', 'memory-extraction', 'SKILL.md'))).toBe(true);
-    expect(existsSync(join(TEST_DIR, '.rules', 'memory', 'classification.md'))).toBe(true);
+    // _omp structure
+    expect(existsSync(join(TEST_DIR, '_omp', 'commands', 'memory.md'))).toBe(true);
+    expect(existsSync(join(TEST_DIR, '_omp', 'skills', 'memory-extraction', 'SKILL.md'))).toBe(true);
   });
 
   it('should create cursor IDE structure', () => {
@@ -89,7 +91,7 @@ describe('install command', () => {
     expect(output).toContain('openmemory-mcp');
   });
 
-  it('should create 8 memory commands', () => {
+  it('should create 7 memory action commands', () => {
     execSync(`node ${CLI_PATH} install -i augment -y --skip-deps`, {
       cwd: TEST_DIR,
       stdio: 'pipe',
@@ -98,10 +100,10 @@ describe('install command', () => {
     // Check main command file
     expect(existsSync(join(TEST_DIR, '.augment', 'commands', 'memory.md'))).toBe(true);
 
-    // Check memory-actions directory
+    // Check memory-actions directory (now under commands/)
     const memoryActions = ['status.md', 'search.md', 'sync.md', 'clean.md', 'store.md', 'decay.md', 'graph.md'];
     for (const action of memoryActions) {
-      expect(existsSync(join(TEST_DIR, '.augment', 'memory-actions', action))).toBe(true);
+      expect(existsSync(join(TEST_DIR, '.augment', 'commands', 'memory-actions', action))).toBe(true);
     }
   });
 });

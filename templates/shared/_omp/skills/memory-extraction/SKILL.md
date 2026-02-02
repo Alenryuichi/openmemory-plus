@@ -1,9 +1,9 @@
 ---
 name: memory-extraction
-description: Agent-only workflow for extracting key information from conversations, code changes, and deployments into structured memory files. Automatically updates `.memory/` directory and notifies other agents. Triggered automatically at conversation end or when valuable information is detected.
+description: Agent-only workflow for extracting key information from conversations, code changes, and deployments into structured memory files. Automatically updates `_omp/.memory/` directory and notifies other agents. Triggered automatically at conversation end or when valuable information is detected.
 metadata:
   author: Wendy (Workflow Builder)
-  version: "2.0"
+  version: "2.1"
   language: zh-CN
   audience: agent-only
 ---
@@ -13,41 +13,81 @@ metadata:
 ## 目的
 
 **自动提取对话中的关键信息**，智能路由到正确的存储系统：
-- **项目级信息** → `.memory/` 目录 (Git 版本控制)
+- **项目级信息** → `_omp/.memory/` 目录 (Git 版本控制)
 - **用户级信息** → `openmemory` MCP (跨项目共享)
 
 > **Agent-Only 原则**:
 > - **自动触发**：对话结束时或检测到有价值信息时自动运行
 > - **智能分类**：根据信息类型自动选择存储位置
 > - **零人工干预**：无需用户确认，静默执行
-> - **双系统同步**：同时管理 `.memory/` 和 `openmemory`
+> - **双系统同步**：同时管理 `_omp/.memory/` 和 `openmemory`
+
+## 核心目录结构
+
+```
+_omp/                           # OpenMemory Plus 核心目录
+├── commands/
+│   ├── memory.md               # 主命令入口
+│   └── memory-actions/         # 7 个子动作
+├── skills/
+│   └── memory-extraction/      # 本 Skill
+│       ├── SKILL.md
+│       ├── scripts/validate.sh
+│       └── templates/*.tmpl
+└── .memory/                    # 项目级记忆
+    ├── project.yaml            # 项目配置 (SSOT)
+    ├── decisions.yaml          # 技术决策记录
+    ├── changelog.yaml          # 变更历史
+    └── sessions/               # 会话记录
+```
 
 ## 双层记忆架构
 
-```
-Agent 记忆系统
-├── .memory/ (项目级)
-│   ├── project.yaml     # 项目配置、部署信息
-│   ├── decisions.yaml   # 技术决策记录
-│   └── changelog.yaml   # 变更历史
-└── openmemory (用户级)
-    ├── 用户偏好          # 跨项目通用
-    ├── 用户技能          # 个人能力
-    └── 对话上下文        # 历史记忆
-```
+| 系统 | 存储位置 | 用途 |
+|------|----------|------|
+| 项目级 | `_omp/.memory/` | 项目配置、技术决策、变更记录 |
+| 用户级 | `openmemory` MCP | 用户偏好、技能、跨项目上下文 |
 
 ## 分类规则
 
-> 📌 详细规则见 `.rules/memory/classification.md`
+### 存储位置决策表
 
-| 信息类型 | 存储位置 | 识别信号 |
-|----------|----------|----------|
-| 项目配置 | `.memory/project.yaml` | url, deploy, config |
-| 技术决策 | `.memory/decisions.yaml` | 决定, 选择, 采用 |
-| 变更记录 | `.memory/changelog.yaml` | 更新, 发布, release |
-| 用户偏好 | `openmemory` | 偏好, 喜欢, 习惯 |
-| 用户技能 | `openmemory` | 会, 熟悉, 经验 |
-| 对话上下文 | `openmemory` | 之前, 上次, 记得 |
+| 信息类型 | 存储位置 | 识别关键词 |
+|----------|----------|------------|
+| 项目配置 | `_omp/.memory/project.yaml` | url, domain, deploy, vercel, config, path |
+| 技术决策 | `_omp/.memory/decisions.yaml` | 决定, 选择, 采用, 架构, decision, choose |
+| 变更记录 | `_omp/.memory/changelog.yaml` | 更新, 修改, 发布, update, change, release |
+| 用户偏好 | `openmemory` | 偏好, 喜欢, 习惯, prefer, style, always |
+| 用户技能 | `openmemory` | 会, 熟悉, 经验, skill, experience, know |
+| 对话上下文 | `openmemory` | 之前, 上次, 记得, remember, last time |
+
+### 分类优先级
+
+1. **项目相关** → `_omp/.memory/` (Git 版本控制)
+2. **用户相关** → `openmemory` (跨项目共享)
+3. **混合信息** → 拆分存储到两个系统
+
+### 敏感信息过滤
+
+**禁止存储**（检测后阻止）:
+
+| 类型 | 检测模式 |
+|------|----------|
+| API Key | `sk-`, `api_key`, `token=`, `bearer` |
+| 密码 | `password`, `secret`, `credential` |
+| 私钥 | `-----BEGIN`, `PRIVATE KEY` |
+| 个人信息 | 身份证号, 银行卡号, 手机号 |
+
+### ROT 过滤规则
+
+**不存储的信息**:
+
+| 类型 | 示例 |
+|------|------|
+| 琐碎确认 | "好的", "OK", "明白了" |
+| 临时状态 | "正在处理...", "稍等" |
+| 重复信息 | 已存在的相同内容 |
+| 过期信息 | 被明确否定或更新的旧信息 |
 
 ## 触发条件
 
@@ -83,20 +123,20 @@ Agent 记忆系统
 | P0 | 服务配置 | `config`, `secret`, `token`, API 密钥 | 更新 VERCEL_TOKEN |
 | P1 | 技术决策 | `决定`, `选择`, `采用`, 架构变更 | 选择 YAML 格式 |
 | P1 | 项目里程碑 | `完成`, `上线`, `发布`, 版本号 | v1.0 发布 |
-| P2 | 路径变更 | 目录创建/移动, 文件重组 | 创建 .memory/ |
+| P2 | 路径变更 | 目录创建/移动, 文件重组 | 创建 _omp/.memory/ |
 | P2 | 工具配置 | CLI 安装, 依赖更新 | 安装 resumes-cli |
 
 ### Phase 2: 信息分类与路由
 
 根据检测结果，**智能路由**到正确的存储系统：
 
-#### 项目级 → `.memory/`
+#### 项目级 → `_omp/.memory/`
 
 | 分类 | 目标文件 | 内容类型 |
 |------|----------|----------|
-| `project` | `.memory/project.yaml` | 项目常量、部署信息、路径 |
-| `decisions` | `.memory/decisions.yaml` | 重要技术决策记录 |
-| `changelog` | `.memory/changelog.yaml` | 变更历史 |
+| `project` | `_omp/.memory/project.yaml` | 项目常量、部署信息、路径 |
+| `decisions` | `_omp/.memory/decisions.yaml` | 重要技术决策记录 |
+| `changelog` | `_omp/.memory/changelog.yaml` | 变更历史 |
 
 #### 用户级 → `openmemory`
 
@@ -158,7 +198,7 @@ paths:
 
 **示例写入**：
 ```yaml
-# .memory/project.yaml
+# _omp/.memory/project.yaml
 deployment:
   vercel:
     url: https://web-zeta-six-79.vercel.app
@@ -171,7 +211,7 @@ deployment:
 更新完成后，在以下位置添加通知标记：
 
 ```yaml
-# .memory/project.yaml (底部)
+# _omp/.memory/project.yaml (底部)
 _meta:
   last_updated: 2026-02-02T10:30:00Z
   updated_by: memory-extraction-skill
@@ -183,10 +223,10 @@ _meta:
 
 ## 输出格式
 
-### `.memory/project.yaml` (主配置)
+### `_omp/.memory/project.yaml` (主配置)
 见现有文件结构，本 Skill 负责自动更新。
 
-### `.memory/sessions/{date}.yaml` (会话记录)
+### `_omp/.memory/sessions/{date}.yaml` (会话记录)
 ```yaml
 date: 2026-02-02
 sessions:
@@ -196,12 +236,12 @@ sessions:
     summary: "部署 Vercel 并配置 Cloudflare Worker"
     key_actions:
       - "更新 VERCEL_TOKEN GitHub Secret"
-      - "创建 .memory/ 目录结构"
+      - "创建 _omp/.memory/ 目录结构"
     decisions:
       - "采用 YAML 格式作为 memory 存储格式"
 ```
 
-### `.memory/decisions.yaml` (决策记录)
+### `_omp/.memory/decisions.yaml` (决策记录)
 ```yaml
 decisions:
   - id: dec-2026-02-02-001
@@ -219,16 +259,16 @@ decisions:
 
 ### 读取方（其他 Agent）
 
-其他 Agent 应在启动时读取 `.memory/project.yaml`：
+其他 Agent 应在启动时读取 `_omp/.memory/project.yaml`：
 
 ```markdown
 <!-- 在 CLAUDE.md 或 Agent 配置中 -->
-> 📌 **配置中心**: 项目常量统一存储在 `.memory/project.yaml`
+> 📌 **配置中心**: 项目常量统一存储在 `_omp/.memory/project.yaml`
 ```
 
 ### 写入方（本 Skill）
 
-本 Skill 是 `.memory/` 的唯一写入者，确保：
+本 Skill 是 `_omp/.memory/` 的唯一写入者，确保：
 - 格式一致性
 - 无冲突写入
 - 变更可追溯
@@ -248,15 +288,15 @@ decisions:
 
 ### 回退机制
 
-1. **写入前备份**: 修改前复制到 `.memory/.backup/`
+1. **写入前备份**: 修改前复制到 `_omp/.memory/.backup/`
 2. **原子写入**: 写入临时文件，验证后重命名
-3. **错误日志**: 记录到 `.memory/sessions/{date}.yaml` 的 `errors` 字段
+3. **错误日志**: 记录到 `_omp/.memory/sessions/{date}.yaml` 的 `errors` 字段
 
 ### 验证脚本
 
 ```bash
 # 验证所有 YAML 文件
-.augment/skills/memory-extraction/scripts/validate.sh
+_omp/skills/memory-extraction/scripts/validate.sh
 ```
 
 ---
@@ -270,7 +310,7 @@ decisions:
 | 用户结束对话 | 用户说 "bye", "结束", "exit", "谢谢" | `用户: 好的，先这样` |
 | 部署完成 | 检测到 deploy/vercel/wrangler 输出 | `vercel --prod` 成功 |
 | 配置变更 | 修改了 env/secret/config 文件 | 更新 `.env` |
-| 创建新目录 | 创建了项目级目录 | `mkdir .memory/` |
+| 创建新目录 | 创建了项目级目录 | `mkdir _omp/.memory/` |
 | 重要决策 | 对话中明确了技术选型 | `决定使用 YAML 格式` |
 
 ### 不触发的场景
@@ -290,9 +330,9 @@ decisions:
 
 ### Schema 验证
 
-- `.memory/schema/project.schema.json`
-- `.memory/schema/decisions.schema.json`
-- `.memory/schema/session.schema.json`
+- `_omp/.memory/schema/project.schema.json`
+- `_omp/.memory/schema/decisions.schema.json`
+- `_omp/.memory/schema/session.schema.json`
 
 ---
 
@@ -327,7 +367,7 @@ Agent 在查询记忆时应检测两系统数据一致性：
     ↓
 提取关键实体 (URL, 配置值, 技术选型)
     ↓
-比对 .memory/ vs openmemory
+比对 _omp/.memory/ vs openmemory
     ↓
 发现差异 → 提示用户确认
     ↓
@@ -338,7 +378,7 @@ Agent 在查询记忆时应检测两系统数据一致性：
 
 | 场景 | 处理方式 |
 |------|----------|
-| URL 不一致 | 提示用户，优先 `.memory/` |
+| URL 不一致 | 提示用户，优先 `_omp/.memory/` |
 | 技术选型冲突 | 展示两边，请求决策 |
 | 时间戳可判断 | 自动保留较新版本 |
 
@@ -352,7 +392,7 @@ Agent 在对话开始时应**并行查询**两个系统：
 对话开始
     ↓
 ┌─────────────────┐     ┌─────────────────┐
-│   .memory/      │     │   openmemory    │
+│  _omp/.memory/  │     │   openmemory    │
 │   (读取 YAML)   │     │ (search_memory) │
 └────────┬────────┘     └────────┬────────┘
          │                       │
@@ -362,7 +402,7 @@ Agent 在对话开始时应**并行查询**两个系统：
 ```
 
 **加载步骤**:
-1. 读取 `.memory/project.yaml` 获取项目配置
+1. 读取 `_omp/.memory/project.yaml` 获取项目配置
 2. 调用 `search_memory_openmemory` 查询相关用户记忆
 3. 融合两边信息作为对话上下文
 
@@ -371,12 +411,12 @@ Agent 在对话开始时应**并行查询**两个系统：
 **当 openmemory MCP 不可用时**:
 
 1. 检测 MCP 连接状态（调用失败或超时）
-2. 降级到仅 `.memory/` 存储
-3. 用户级信息临时存入 `.memory/user-context.yaml`
+2. 降级到仅 `_omp/.memory/` 存储
+3. 用户级信息临时存入 `_omp/.memory/user-context.yaml`
 4. 服务恢复后提示用户同步
 
 ```yaml
-# .memory/user-context.yaml (降级时使用)
+# _omp/.memory/user-context.yaml (降级时使用)
 _degraded: true
 _reason: "openmemory MCP unavailable"
 pending_memories:
@@ -388,6 +428,7 @@ pending_memories:
 
 | 版本 | 变更 |
 |------|------|
+| v2.1 | 目录重构：_omp/ 统一目录，移除 rules/，分类规则内嵌 |
 | v2.0 | 双层记忆架构：整合 openmemory MCP，智能分类路由 |
 | v1.1 | 添加错误处理、Schema 验证、模板文件、触发条件详解 |
 | v1.0 | 初始版本：自动提取、YAML 存储、多 Agent 通知 |

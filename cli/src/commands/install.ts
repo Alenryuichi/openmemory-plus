@@ -26,7 +26,6 @@ interface IdeConfig {
   configFile: string;
   commandsDir: string;
   skillsDir: string;
-  rulesDir: string;
 }
 
 // ============================================================================
@@ -34,11 +33,11 @@ interface IdeConfig {
 // ============================================================================
 
 const IDE_CONFIGS: Record<string, IdeConfig> = {
-  augment: { dir: '.augment', configFile: 'AGENTS.md', commandsDir: 'commands', skillsDir: 'skills', rulesDir: '.rules/memory' },
-  claude: { dir: '.', configFile: 'CLAUDE.md', commandsDir: '.claude/commands', skillsDir: '.claude/skills', rulesDir: '.rules/memory' },
-  cursor: { dir: '.cursor', configFile: '.cursorrules', commandsDir: 'commands', skillsDir: 'skills', rulesDir: '.rules/memory' },
-  gemini: { dir: '.', configFile: 'gemini.md', commandsDir: '.gemini/commands', skillsDir: '.gemini/skills', rulesDir: '.rules/memory' },
-  common: { dir: '.', configFile: 'AGENTS.md', commandsDir: '.agents/commands', skillsDir: '.agents/skills', rulesDir: '.rules/memory' },
+  augment: { dir: '.augment', configFile: 'AGENTS.md', commandsDir: 'commands', skillsDir: 'skills' },
+  claude: { dir: '.', configFile: 'CLAUDE.md', commandsDir: '.claude/commands', skillsDir: '.claude/skills' },
+  cursor: { dir: '.cursor', configFile: '.cursorrules', commandsDir: 'commands', skillsDir: 'skills' },
+  gemini: { dir: '.', configFile: 'gemini.md', commandsDir: '.gemini/commands', skillsDir: '.gemini/skills' },
+  common: { dir: '.', configFile: 'AGENTS.md', commandsDir: '.agents/commands', skillsDir: '.agents/skills' },
 };
 
 const BANNER = `
@@ -158,7 +157,7 @@ project:
   description: ""
 
 memory:
-  project_store: ".memory/"
+  project_store: "_omp/.memory/"
   user_store: "openmemory"
 
 classification:
@@ -341,71 +340,63 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   }
   
   const config = IDE_CONFIGS[ide!];
-  
+
   console.log(chalk.bold('\n📁 创建配置文件...\n'));
-  
-  // Create .memory directory
-  const memoryDir = join(cwd, '.memory');
-  if (!existsSync(memoryDir)) {
-    mkdirSync(memoryDir, { recursive: true });
-  }
-  console.log(chalk.green('  ✓ 创建 .memory/'));
-  
-  // Create project.yaml
-  const projectYaml = join(memoryDir, 'project.yaml');
-  writeFileSync(projectYaml, generateProjectYaml(projectName));
-  console.log(chalk.green('  ✓ 创建 .memory/project.yaml'));
 
   const templatesDir = getTemplatesDir();
-
-  // Copy and process memory bank files
-  const memoryTemplatesDir = join(templatesDir, 'shared', 'memory');
-  if (existsSync(memoryTemplatesDir)) {
-    const memoryFiles = readdirSync(memoryTemplatesDir);
-    for (const file of memoryFiles) {
-      const srcPath = join(memoryTemplatesDir, file);
-      const destPath = join(memoryDir, file);
-      const content = readFileSync(srcPath, 'utf-8');
-      writeFileSync(destPath, processTemplate(content, projectName));
-    }
-    console.log(chalk.green(`  ✓ 创建 .memory/ (${memoryFiles.length} 个核心文件)`));
-  }
-  const sharedTemplates = join(templatesDir, 'shared');
+  const ompTemplates = join(templatesDir, 'shared', '_omp');
   const ideTemplates = join(templatesDir, ide === 'common' ? 'common' : ide!);
 
-  // Create and copy commands
-  const commandsDir = join(cwd, config.dir, config.commandsDir);
-  mkdirSync(commandsDir, { recursive: true });
-  copyDir(join(sharedTemplates, 'commands'), commandsDir);
-  console.log(chalk.green(`  ✓ 创建 ${config.dir}/${config.commandsDir}/ (memory.md)`));
+  // Create _omp/ directory (core)
+  const ompDir = join(cwd, '_omp');
+  mkdirSync(ompDir, { recursive: true });
+  copyDir(ompTemplates, ompDir);
+  console.log(chalk.green('  ✓ 创建 _omp/ (核心目录)'));
 
-  // Create and copy memory-actions (sub-actions for /memory command)
-  // Place memory-actions alongside commands directory
-  const commandsParentDir = dirname(join(cwd, config.dir, config.commandsDir));
-  const memoryActionsDir = join(commandsParentDir, 'memory-actions');
-  mkdirSync(memoryActionsDir, { recursive: true });
-  copyDir(join(sharedTemplates, 'memory-actions'), memoryActionsDir);
-  const actionsCount = existsSync(join(sharedTemplates, 'memory-actions'))
-    ? readdirSync(join(sharedTemplates, 'memory-actions')).length
+  // Process memory template files with project name
+  const ompMemoryDir = join(ompDir, '.memory');
+  if (existsSync(ompMemoryDir)) {
+    const memoryFiles = readdirSync(ompMemoryDir);
+    for (const file of memoryFiles) {
+      const filePath = join(ompMemoryDir, file);
+      const content = readFileSync(filePath, 'utf-8');
+      writeFileSync(filePath, processTemplate(content, projectName));
+    }
+  }
+
+  // Create project.yaml
+  const projectYaml = join(ompMemoryDir, 'project.yaml');
+  writeFileSync(projectYaml, generateProjectYaml(projectName));
+  console.log(chalk.green('  ✓ 创建 _omp/.memory/project.yaml'));
+
+  // Count files
+  const commandsCount = existsSync(join(ompDir, 'commands'))
+    ? readdirSync(join(ompDir, 'commands')).filter(f => f.endsWith('.md')).length
     : 0;
-  const memoryActionsDisplayPath = memoryActionsDir.replace(cwd + '/', '');
-  console.log(chalk.green(`  ✓ 创建 ${memoryActionsDisplayPath}/ (${actionsCount} 个子动作)`));
+  const actionsCount = existsSync(join(ompDir, 'commands', 'memory-actions'))
+    ? readdirSync(join(ompDir, 'commands', 'memory-actions')).length
+    : 0;
+  console.log(chalk.green(`  ✓ 创建 _omp/commands/ (${commandsCount} 命令, ${actionsCount} 子动作)`));
+  console.log(chalk.green('  ✓ 创建 _omp/skills/ (memory-extraction)'));
 
-  // Create and copy skills
-  const skillsDir = join(cwd, config.dir, config.skillsDir);
-  mkdirSync(skillsDir, { recursive: true });
-  copyDir(join(sharedTemplates, 'skills'), skillsDir);
-  console.log(chalk.green(`  ✓ 创建 ${config.dir}/${config.skillsDir}/ (memory-extraction)`));
+  // Create IDE-specific directory and copy commands/skills
+  const ideDir = join(cwd, config.dir);
 
-  // Create and copy rules
-  const rulesDir = join(cwd, config.rulesDir);
-  mkdirSync(rulesDir, { recursive: true });
-  copyDir(join(sharedTemplates, 'rules'), rulesDir);
-  console.log(chalk.green(`  ✓ 创建 ${config.rulesDir}/ (classification.md)`));
+  // Create and copy commands to IDE dir
+  const ideCommandsDir = join(cwd, config.dir, config.commandsDir);
+  mkdirSync(ideCommandsDir, { recursive: true });
+  copyDir(join(ompDir, 'commands'), ideCommandsDir);
+  console.log(chalk.green(`  ✓ 复制到 ${config.dir}/${config.commandsDir}/`));
+
+  // Create and copy skills to IDE dir
+  const ideSkillsDir = join(cwd, config.dir, config.skillsDir);
+  mkdirSync(ideSkillsDir, { recursive: true });
+  copyDir(join(ompDir, 'skills'), ideSkillsDir);
+  console.log(chalk.green(`  ✓ 复制到 ${config.dir}/${config.skillsDir}/`));
 
   // Copy IDE-specific config file
   if (existsSync(ideTemplates)) {
-    copyDir(ideTemplates, join(cwd, config.dir));
+    copyDir(ideTemplates, ideDir);
     console.log(chalk.green(`  ✓ 复制 ${config.configFile}`));
   }
 

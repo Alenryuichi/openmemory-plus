@@ -11,7 +11,7 @@ OpenMemory Plus 记忆管理统一入口。
 当用户输入 `/memory` 时：
 
 1. **快速状态检测**
-   - 读取 `.memory/` 目录状态
+   - 读取 `_omp/.memory/` 目录状态
    - 调用 `list_memories_openmemory` 获取用户记忆数量
 
 2. **显示菜单**
@@ -20,7 +20,7 @@ OpenMemory Plus 记忆管理统一入口。
 📊 记忆管理系统
 
 当前状态快览:
-├── 项目级 (.memory/): {n} 个文件
+├── 项目级 (_omp/.memory/): {n} 个文件
 └── 用户级 (openmemory): {n} 条记忆
 
 选择操作:
@@ -74,7 +74,7 @@ Agent 可使用以下工具：
 
 ## 项目级记忆
 
-直接读写 `.memory/` 目录下的 YAML 文件：
+直接读写 `_omp/.memory/` 目录下的 YAML 文件：
 
 - `project.yaml` - 项目配置
 - `decisions.yaml` - 技术决策

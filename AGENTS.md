@@ -11,49 +11,58 @@
 | 命令 | 说明 | 文件 |
 |------|------|------|
 | `/memory` | 统一入口 | `commands/memory.md` |
-| `/mem status` | 记忆状态 | `commands/mem-status.md` |
-| `/mem search {q}` | 搜索记忆 | `commands/mem-search.md` |
-| `/mem sync` | 同步检查 | `commands/mem-sync.md` |
-| `/mem clean` | ROT 清理 | `commands/mem-clean.md` |
-| `/mem extract` | 手动提取 | `commands/mem-extract.md` |
 
-**简化版（推荐）：只需一个命令 `/memory`，其余通过菜单选择或自然语言。**
+**只需一个命令 `/memory`，其余通过菜单选择或自然语言描述。**
+
+## 核心目录
+
+```
+_omp/                           # OpenMemory Plus 核心目录
+├── commands/
+│   ├── memory.md               # 主命令入口
+│   └── memory-actions/         # 7 个子动作
+├── skills/
+│   └── memory-extraction/      # 自动提取 Skill (含分类规则)
+└── .memory/                    # 项目级记忆
+    ├── project.yaml            # 项目配置 (SSOT)
+    └── *.md                    # 上下文文件
+```
 
 ## 自动行为
 
 ### 对话开始时
 
 1. 搜索 `openmemory` 获取用户上下文
-2. 加载 `.memory/project.yaml` 获取项目配置
+2. 加载 `_omp/.memory/project.yaml` 获取项目配置
 3. 融合上下文提供个性化响应
 
 ### 对话结束时
 
 1. 检测有价值信息
 2. 按分类规则路由存储
-3. 项目级 → `.memory/`
+3. 项目级 → `_omp/.memory/`
 4. 用户级 → `openmemory`
 
 ## 分类规则
 
-加载 `rules/classification.md` 获取详细分类逻辑。
+分类规则已内嵌在 `_omp/skills/memory-extraction/SKILL.md` 中。
 
 ### 快速参考
 
 | 存储位置 | 信息类型 |
 |----------|----------|
-| `.memory/` | 项目配置、技术决策、部署信息 |
+| `_omp/.memory/` | 项目配置、技术决策、部署信息 |
 | `openmemory` | 用户偏好、技能、跨项目上下文 |
 
 ## Skill
 
 ### memory-extraction
 
-**位置**: `skills/memory-extraction/SKILL.md`
+**位置**: `_omp/skills/memory-extraction/SKILL.md`
 
-**触发**: 
+**触发**:
 - 对话结束时自动执行
-- `/mem extract` 手动触发
+- `/memory` → 选择 3 (存储记忆)
 
 **功能**:
 - 检测有价值信息
@@ -76,26 +85,13 @@ Agent 可使用以下 OpenMemory MCP 工具:
 
 当 `openmemory` MCP 不可用时:
 
-1. 用户级信息临时存入 `.memory/user-context.yaml`
+1. 用户级信息临时存入 `_omp/.memory/user-context.yaml`
 2. 提示用户检查 MCP 服务状态
 3. 下次可用时自动同步
 
-## 相关文件
-
-```
-openmemory-plus/
-├── AGENTS.md              # 本文件
-├── README.md              # 项目说明
-├── commands/              # 命令定义
-├── rules/                 # 规则定义
-│   └── classification.md  # 分类规则
-└── skills/                # Skill 定义
-    └── memory-extraction/ # 记忆提取
-```
-
 ## 版本
 
-- **版本**: v1.0
+- **版本**: v2.0
 - **日期**: 2026-02-02
-- **兼容**: Augment, Claude Code, Cursor
+- **兼容**: Augment, Claude Code, Cursor, Gemini
 
