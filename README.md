@@ -149,7 +149,7 @@
 
 **使用 OpenMemory Plus**:
 ```yaml
-# .memory/project.yaml (自动生成)
+# _omp/.memory/project.yaml (自动生成)
 deployment:
   vercel:
     url: https://my-app.vercel.app
@@ -195,7 +195,7 @@ openmemory (用户级，跨项目共享):
 
 **使用 OpenMemory Plus**:
 ```yaml
-# .memory/decisions.yaml (自动记录)
+# _omp/.memory/decisions.yaml (自动记录)
 decisions:
   - id: dec-2026-02-01
     title: "数据库选型"
@@ -353,7 +353,7 @@ npx openmemory-plus install
 │         ┌──────────────────┼──────────────────┐            │
 │         ↓                                     ↓            │
 │  ┌─────────────────┐              ┌─────────────────┐      │
-│  │   .memory/      │              │   openmemory    │      │
+│  │ _omp/.memory/   │              │   openmemory    │      │
 │  │   (项目级)      │              │   (用户级)      │      │
 │  ├─────────────────┤              ├─────────────────┤      │
 │  │ • project.yaml  │              │ • 向量数据库    │      │
@@ -368,10 +368,12 @@ npx openmemory-plus install
 
 | 信息类型 | 存储位置 | 示例 |
 |----------|----------|------|
-| 项目配置 | `.memory/project.yaml` | 部署 URL、环境变量、路径 |
-| 技术决策 | `.memory/decisions.yaml` | 框架选择、架构设计 |
+| 项目配置 | `_omp/.memory/project.yaml` | 部署 URL、环境变量、路径 |
+| 技术决策 | `_omp/.memory/decisions.yaml` | 框架选择、架构设计 |
 | 用户偏好 | `openmemory` (MCP) | 语言偏好、代码风格 |
 | 用户技能 | `openmemory` (MCP) | 熟悉的技术栈、经验 |
+
+> 💡 **注意**: 安装后，项目级记忆存储在 `_omp/.memory/` 目录下，该目录会被添加到 Git 版本控制。
 
 ---
 
@@ -471,6 +473,15 @@ openmemory-plus/
 │   └── architecture.md    # 架构设计
 ├── AGENTS.md              # AI Agent 配置入口
 └── README.md              # 本文件
+
+# 安装后在你的项目中生成:
+your-project/
+└── _omp/                  # OpenMemory Plus 核心目录
+    ├── .memory/           # 项目级记忆存储
+    │   ├── project.yaml   # 项目配置
+    │   └── decisions.yaml # 技术决策
+    ├── commands/          # Agent 命令
+    └── skills/            # Agent Skills
 ```
 
 ---
@@ -506,7 +517,7 @@ openmemory-plus/
         │
         ▼
    ┌─────────────┐
-   │ 包含项目特定 │──是──▶ .memory/ (项目级)
+   │ 包含项目特定 │──是──▶ _omp/.memory/ (项目级)
    │ 信息？      │        ├── project.yaml
    └─────────────┘        ├── decisions.yaml
         │ 否              └── changelog.yaml
@@ -577,7 +588,7 @@ openmemory-plus/
 
 | 存储位置 | 数据类型 | 安全性 |
 |----------|----------|--------|
-| `.memory/` (本地) | 项目配置、技术决策 | ✅ 本地文件，Git 版本控制 |
+| `_omp/.memory/` (本地) | 项目配置、技术决策 | ✅ 本地文件，Git 版本控制 |
 | `openmemory` (Qdrant) | 用户偏好、技能 | ✅ 本地 Docker 容器 |
 
 - 所有数据都在**你的本地机器**上
@@ -614,7 +625,7 @@ npx openmemory-plus install
 
 安装向导会：
 1. 检测现有配置
-2. 创建 `.memory/` 目录
+2. 创建 `_omp/.memory/` 目录
 3. 生成 IDE 配置文件
 4. 不会覆盖你的现有文件
 

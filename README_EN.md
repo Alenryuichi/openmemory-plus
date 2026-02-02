@@ -29,15 +29,15 @@
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-features">Features</a> •
   <a href="#-architecture">Architecture</a> •
-  <a href="#-supported-ides">Supported IDEs</a> •
-  <a href="docs/architecture.md">Docs</a>
+  <a href="#️-supported-ides">Supported IDEs</a> •
+  <a href="./docs/architecture.md">Docs</a>
 </p>
 
 ---
 
 ## 🎯 Introduction
 
-**OpenMemory Plus** is a unified memory management framework for AI Agents, integrating project-level (`.memory/`) and user-level (`openmemory` MCP) dual-layer memory systems.
+**OpenMemory Plus** is a unified memory management framework for AI Agents, integrating project-level (`_omp/.memory/`) and user-level (`openmemory` MCP) dual-layer memory systems.
 
 > **Give any AI Agent persistent memory in 5 minutes.**
 
@@ -135,9 +135,6 @@ Have you experienced these problems?
 | **AI Tool Power Users** | Use Cursor, Claude, Augment simultaneously, want shared memory |
 | **Team Tech Leads** | Want version-controlled project config, new members' Agents auto-get context |
 
-
-
-
 ### 📋 Typical Use Cases
 
 <details>
@@ -152,7 +149,7 @@ Have you experienced these problems?
 
 **With OpenMemory Plus**:
 ```yaml
-# .memory/project.yaml (auto-generated)
+# _omp/.memory/project.yaml (auto-generated)
 deployment:
   vercel:
     url: https://my-app.vercel.app
@@ -188,7 +185,30 @@ Any project, any IDE, Agent knows your preferences.
 </details>
 
 <details>
-<summary><b>🔄 Use Case 3: Multi-CLI Memory Sharing (Core Scenario)</b></summary>
+<summary><b>📝 Use Case 3: Tech Decision Tracking</b></summary>
+
+**Scenario**: Team decided to use PostgreSQL instead of MongoDB
+
+**Without OpenMemory Plus**:
+- Decision recorded in Slack/Notion, Agent doesn't know
+- Next time Agent might suggest MongoDB again
+
+**With OpenMemory Plus**:
+```yaml
+# _omp/.memory/decisions.yaml (auto-recorded)
+decisions:
+  - id: dec-2026-02-01
+    title: "Database Selection"
+    choice: "PostgreSQL"
+    alternatives: ["MongoDB", "MySQL"]
+    rationale: "Need complex queries and transaction support"
+```
+Agent remembers decisions, won't suggest rejected options again.
+
+</details>
+
+<details>
+<summary><b>🔄 Use Case 4: Multi-CLI Memory Sharing (Core Scenario)</b></summary>
 
 **Scenario**: You use Gemini CLI, Augment, Claude Code, Cursor simultaneously
 
@@ -314,7 +334,7 @@ After installation, use in your AI Agent conversations:
 │         ┌──────────────────┼──────────────────┐            │
 │         ↓                                     ↓            │
 │  ┌─────────────────┐              ┌─────────────────┐      │
-│  │   .memory/      │              │   openmemory    │      │
+│  │ _omp/.memory/   │              │   openmemory    │      │
 │  │  (project-level)│              │  (user-level)   │      │
 │  ├─────────────────┤              ├─────────────────┤      │
 │  │ • project.yaml  │              │ • Vector DB     │      │
@@ -329,10 +349,12 @@ After installation, use in your AI Agent conversations:
 
 | Info Type | Storage Location | Examples |
 |-----------|------------------|----------|
-| Project Config | `.memory/project.yaml` | Deploy URL, env vars, paths |
-| Tech Decisions | `.memory/decisions.yaml` | Framework choices, architecture |
+| Project Config | `_omp/.memory/project.yaml` | Deploy URL, env vars, paths |
+| Tech Decisions | `_omp/.memory/decisions.yaml` | Framework choices, architecture |
 | User Preferences | `openmemory` (MCP) | Language preference, code style |
 | User Skills | `openmemory` (MCP) | Familiar tech stack, experience |
+
+> 💡 **Note**: After installation, project-level memory is stored in `_omp/.memory/` directory, which is added to Git version control.
 
 ---
 
@@ -433,6 +455,15 @@ openmemory-plus/
 │   └── architecture.md    # Architecture design
 ├── AGENTS.md              # AI Agent config entry
 └── README.md              # This file
+
+# After installation in your project:
+your-project/
+└── _omp/                  # OpenMemory Plus core directory
+    ├── .memory/           # Project-level memory storage
+    │   ├── project.yaml   # Project config
+    │   └── decisions.yaml # Tech decisions
+    ├── commands/          # Agent commands
+    └── skills/            # Agent Skills
 ```
 
 ---
@@ -474,7 +505,7 @@ You need to install mem0/openmemory MCP first, then use OpenMemory Plus to enhan
 
 | Location | Data Type | Security |
 |----------|-----------|----------|
-| `.memory/` (local) | Project config, tech decisions | ✅ Local files, Git versioned |
+| `_omp/.memory/` (local) | Project config, tech decisions | ✅ Local files, Git versioned |
 | `openmemory` (Qdrant) | User preferences, skills | ✅ Local Docker container |
 
 - All data is on **your local machine**
@@ -511,7 +542,7 @@ npx openmemory-plus install
 
 The wizard will:
 1. Detect existing config
-2. Create `.memory/` directory
+2. Create `_omp/.memory/` directory
 3. Generate IDE config files
 4. Won't overwrite your existing files
 
