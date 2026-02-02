@@ -552,11 +552,22 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
 
   if (options.ide) {
     // Parse comma-separated IDE list from command line
-    selectedIdes = options.ide
+    const requestedIdes = options.ide
       .toLowerCase()
       .split(',')
       .map((s) => s.trim())
-      .filter((s) => IDE_CONFIGS[s]);
+      .filter((s) => s.length > 0);
+
+    // Fix M2: Warn about invalid IDE names instead of silent ignore
+    const validIdes = requestedIdes.filter((s) => IDE_CONFIGS[s]);
+    const invalidIdes = requestedIdes.filter((s) => !IDE_CONFIGS[s]);
+
+    if (invalidIdes.length > 0) {
+      console.log(chalk.yellow(`  ⚠ 未知的 IDE: ${invalidIdes.join(', ')}`));
+      console.log(chalk.gray(`    有效选项: ${Object.keys(IDE_CONFIGS).join(', ')}`));
+    }
+
+    selectedIdes = validIdes;
   }
 
   if (selectedIdes.length === 0) {
@@ -658,7 +669,7 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   console.log(chalk.green('  ✓ 创建 _omp/skills/ (memory-extraction)'));
 
   // Create IDE-specific directories for each selected IDE
-  // Only copy commands and skills to IDE dir, no config files (AGENTS.md, CLAUDE.md, etc.)
+  // Only copy commands and skills - no config files (AGENTS.md, CLAUDE.md, etc.)
   for (const ide of selectedIdes) {
     const config = IDE_CONFIGS[ide];
     if (!config) continue;
@@ -674,6 +685,11 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
     copyDir(join(ompDir, 'skills'), ideSkillsDir);
 
     console.log(chalk.green(`  ✓ 配置 ${ide} (${config.commandsDir}/)`));
+  }
+
+  // Show summary for multi-select (Fix L2)
+  if (selectedIdes.length > 1) {
+    console.log(chalk.green(`\n  ✓ 已为 ${selectedIdes.length} 个 IDE 配置完成: ${selectedIdes.join(', ')}`));
   }
 
   // Return first IDE for MCP config display

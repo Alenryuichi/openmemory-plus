@@ -111,5 +111,32 @@ describe('install command', () => {
       expect(existsSync(join(TEST_DIR, '_omp', 'workflows', 'memory', 'steps', step))).toBe(true);
     }
   });
+
+  // Fix M1: Add multi-select IDE tests
+  it('should support multi-select IDE with comma-separated list', () => {
+    execSync(`node ${CLI_PATH} install -i augment,cursor -y --skip-deps`, {
+      cwd: TEST_DIR,
+      stdio: 'pipe',
+    });
+
+    // Both IDEs should have commands and skills
+    expect(existsSync(join(TEST_DIR, '.augment', 'commands', 'memory.md'))).toBe(true);
+    expect(existsSync(join(TEST_DIR, '.cursor', 'commands', 'memory.md'))).toBe(true);
+    expect(existsSync(join(TEST_DIR, '.augment', 'skills', 'memory-extraction', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(TEST_DIR, '.cursor', 'skills', 'memory-extraction', 'SKILL.md'))).toBe(true);
+  });
+
+  it('should warn about invalid IDE names', () => {
+    const output = execSync(`node ${CLI_PATH} install -i augment,invalid_ide -y --skip-deps`, {
+      cwd: TEST_DIR,
+      encoding: 'utf-8',
+    });
+
+    // Should warn about invalid IDE
+    expect(output).toContain('未知的 IDE');
+    expect(output).toContain('invalid_ide');
+    // But still install valid ones
+    expect(existsSync(join(TEST_DIR, '.augment', 'commands', 'memory.md'))).toBe(true);
+  });
 });
 
