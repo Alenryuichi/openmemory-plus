@@ -456,14 +456,26 @@ openmemory-plus/
 ├── AGENTS.md              # AI Agent config entry
 └── README.md              # This file
 
-# After installation in your project:
+# After installation in your project (Augment example):
 your-project/
-└── _omp/                  # OpenMemory Plus core directory
-    ├── .memory/           # Project-level memory storage
-    │   ├── project.yaml   # Project config
-    │   └── decisions.yaml # Tech decisions
-    ├── commands/          # Agent commands
-    └── skills/            # Agent Skills
+├── _omp/                      # OpenMemory Plus core directory (shared by all IDEs)
+│   ├── .memory/               # Project-level memory storage
+│   │   ├── project.yaml       # Project config (auto-generated)
+│   │   ├── activeContext.md   # Active context
+│   │   ├── productContext.md  # Product context
+│   │   └── ...                # Other context files
+│   ├── commands/              # Agent commands
+│   │   ├── memory.md          # Main command entry
+│   │   └── memory-actions/    # 7 sub-actions
+│   └── skills/                # Agent Skills
+│       └── memory-extraction/ # Memory extraction Skill
+│
+├── .augment/                  # IDE-specific directory
+│   ├── commands/              # Copied from _omp/commands
+│   ├── skills/                # Copied from _omp/skills
+│   └── AGENTS.md              # IDE config file
+│
+└── AGENTS.md                  # Agent config entry
 ```
 
 ---

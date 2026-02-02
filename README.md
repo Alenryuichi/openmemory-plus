@@ -474,14 +474,26 @@ openmemory-plus/
 ├── AGENTS.md              # AI Agent 配置入口
 └── README.md              # 本文件
 
-# 安装后在你的项目中生成:
+# 安装后在你的项目中生成 (以 Augment 为例):
 your-project/
-└── _omp/                  # OpenMemory Plus 核心目录
-    ├── .memory/           # 项目级记忆存储
-    │   ├── project.yaml   # 项目配置
-    │   └── decisions.yaml # 技术决策
-    ├── commands/          # Agent 命令
-    └── skills/            # Agent Skills
+├── _omp/                      # OpenMemory Plus 核心目录 (所有 IDE 共享)
+│   ├── .memory/               # 项目级记忆存储
+│   │   ├── project.yaml       # 项目配置 (自动生成)
+│   │   ├── activeContext.md   # 活动上下文
+│   │   ├── productContext.md  # 产品上下文
+│   │   └── ...                # 其他上下文文件
+│   ├── commands/              # Agent 命令
+│   │   ├── memory.md          # 主命令入口
+│   │   └── memory-actions/    # 7 个子动作
+│   └── skills/                # Agent Skills
+│       └── memory-extraction/ # 记忆提取 Skill
+│
+├── .augment/                  # IDE 特定目录
+│   ├── commands/              # 复制自 _omp/commands
+│   ├── skills/                # 复制自 _omp/skills
+│   └── AGENTS.md              # IDE 配置文件
+│
+└── AGENTS.md                  # Agent 配置入口
 ```
 
 ---
