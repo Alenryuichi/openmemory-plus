@@ -89,45 +89,36 @@ Agent 记忆系统
 
 ## 🛠️ 安装
 
-### 方式 A: 使用 CLI (推荐)
+**只需一个命令：**
 
 ```bash
-# 全局安装
-cd openmemory-plus/cli && npm install && npm link
-
-# 检查系统状态
-openmemory-plus status
-
-# 安装缺失依赖 (Docker, Ollama, Qdrant, BGE-M3)
-openmemory-plus install
-
-# 在新项目中初始化 (交互式选择 IDE)
-cd /path/to/your/project
-openmemory-plus init
+npx openmemory-plus install
 ```
 
-### CLI 命令
+安装向导会引导你完成：
+
+1. ✅ 检测系统依赖 (Docker, Ollama, Qdrant, BGE-M3)
+2. ✅ 安装缺失的依赖
+3. ✅ 选择 IDE 类型 (Augment, Claude, Cursor, Gemini)
+4. ✅ 初始化项目配置
+5. ✅ 显示下一步指引
+
+### 命令选项
 
 ```bash
-openmemory-plus install    # 安装依赖
-openmemory-plus init       # 初始化项目
-openmemory-plus status     # 检查状态
-openmemory-plus doctor     # 诊断问题
-openmemory-plus doctor --fix  # 自动修复
+npx openmemory-plus install              # 交互式安装 (推荐)
+npx openmemory-plus install -y           # 跳过确认提示
+npx openmemory-plus install --ide augment  # 指定 IDE 类型
+npx openmemory-plus install --skip-deps  # 仅配置项目，跳过依赖
+npx openmemory-plus install --show-mcp   # 显示 MCP 配置
 ```
 
-### 方式 B: 手动复制
+### 其他命令
 
 ```bash
-cp -r openmemory-plus /path/to/your/project/
-```
-
-在 `CLAUDE.md` 或 `AGENTS.md` 中添加:
-
-```markdown
-## Memory Management
-
-加载 `openmemory-plus/AGENTS.md` 获取记忆管理能力。
+npx openmemory-plus status     # 检查系统状态
+npx openmemory-plus doctor     # 诊断问题
+npx openmemory-plus doctor --fix  # 自动修复
 ```
 
 ### 系统要求

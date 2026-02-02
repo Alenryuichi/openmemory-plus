@@ -2,7 +2,6 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { installCommand } from './commands/install.js';
-import { initCommand } from './commands/init.js';
 import { statusCommand } from './commands/status.js';
 import { doctorCommand } from './commands/doctor.js';
 
@@ -10,49 +9,30 @@ const program = new Command();
 
 program
   .name('openmemory-plus')
-  .description('🧠 Agent Memory Management CLI - Install, configure, and manage OpenMemory Plus')
+  .description('🧠 Agent Memory Management - 让任何 AI Agent 获得持久记忆能力')
   .version('1.0.0');
 
+// Main command: install (unified entry point)
 program
-  .command('install')
-  .description('Install and configure all dependencies (Docker, Ollama, Qdrant, OpenMemory)')
-  .option('-y, --yes', 'Skip confirmation prompts')
-  .option('--skip-docker', 'Skip Docker installation')
-  .option('--skip-ollama', 'Skip Ollama installation')
+  .command('install', { isDefault: true })
+  .description('一键安装和配置 OpenMemory Plus (推荐)')
+  .option('-y, --yes', '跳过确认提示')
+  .option('-i, --ide <type>', 'IDE 类型: augment, claude, cursor, gemini, common')
+  .option('--skip-deps', '跳过依赖安装，仅配置项目')
+  .option('--show-mcp', '显示 MCP 配置')
   .action(installCommand);
 
-program
-  .command('init')
-  .description('Initialize OpenMemory Plus in current project')
-  .option('-i, --ide <type>', 'IDE type: augment, claude, cursor, gemini, common', 'augment')
-  .option('-y, --yes', 'Skip confirmation prompts')
-  .option('--project-name <name>', 'Project name for configuration')
-  .option('--generate-mcp', 'Generate MCP configuration snippet')
-  .action(initCommand);
-
+// Secondary commands (for advanced users)
 program
   .command('status')
-  .description('Check OpenMemory Plus system status')
+  .description('检查系统状态')
   .action(statusCommand);
 
 program
   .command('doctor')
-  .description('Diagnose and fix common issues')
-  .option('--fix', 'Attempt to fix issues automatically')
+  .description('诊断并修复问题')
+  .option('--fix', '自动修复问题')
   .action(doctorCommand);
 
-// Default action - show status
-program
-  .action(() => {
-    console.log(chalk.cyan.bold('\n🧠 OpenMemory Plus - Agent Memory Management\n'));
-    console.log('Usage: openmemory-plus <command> [options]\n');
-    console.log('Commands:');
-    console.log('  install   Install and configure dependencies');
-    console.log('  init      Initialize in current project');
-    console.log('  status    Check system status');
-    console.log('  doctor    Diagnose issues\n');
-    console.log('Run "openmemory-plus --help" for more information.');
-  });
-
+// Parse and execute
 program.parse();
-

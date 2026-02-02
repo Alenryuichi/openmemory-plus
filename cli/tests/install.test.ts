@@ -3,10 +3,10 @@ import { existsSync, mkdirSync, rmSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
 
-const TEST_DIR = '/tmp/omp-test-init';
+const TEST_DIR = '/tmp/omp-test-install';
 const CLI_PATH = join(__dirname, '..', 'dist', 'index.js');
 
-describe('init command', () => {
+describe('install command', () => {
   beforeEach(() => {
     // Clean up test directory
     if (existsSync(TEST_DIR)) {
@@ -22,7 +22,7 @@ describe('init command', () => {
   });
 
   it('should create .memory directory with project.yaml', () => {
-    execSync(`node ${CLI_PATH} init -i augment -y --project-name test-proj`, {
+    execSync(`node ${CLI_PATH} install -i augment -y --skip-deps`, {
       cwd: TEST_DIR,
       stdio: 'pipe',
     });
@@ -31,11 +31,11 @@ describe('init command', () => {
     expect(existsSync(join(TEST_DIR, '.memory', 'project.yaml'))).toBe(true);
 
     const content = readFileSync(join(TEST_DIR, '.memory', 'project.yaml'), 'utf-8');
-    expect(content).toContain('name: "test-proj"');
+    expect(content).toContain('name:');
   });
 
   it('should create augment IDE structure', () => {
-    execSync(`node ${CLI_PATH} init -i augment -y --project-name test`, {
+    execSync(`node ${CLI_PATH} install -i augment -y --skip-deps`, {
       cwd: TEST_DIR,
       stdio: 'pipe',
     });
@@ -47,7 +47,7 @@ describe('init command', () => {
   });
 
   it('should create cursor IDE structure', () => {
-    execSync(`node ${CLI_PATH} init -i cursor -y --project-name test`, {
+    execSync(`node ${CLI_PATH} install -i cursor -y --skip-deps`, {
       cwd: TEST_DIR,
       stdio: 'pipe',
     });
@@ -58,7 +58,7 @@ describe('init command', () => {
   });
 
   it('should create claude IDE structure', () => {
-    execSync(`node ${CLI_PATH} init -i claude -y --project-name test`, {
+    execSync(`node ${CLI_PATH} install -i claude -y --skip-deps`, {
       cwd: TEST_DIR,
       stdio: 'pipe',
     });
@@ -68,7 +68,7 @@ describe('init command', () => {
   });
 
   it('should create gemini IDE structure', () => {
-    execSync(`node ${CLI_PATH} init -i gemini -y --project-name test`, {
+    execSync(`node ${CLI_PATH} install -i gemini -y --skip-deps`, {
       cwd: TEST_DIR,
       stdio: 'pipe',
     });
@@ -77,8 +77,8 @@ describe('init command', () => {
     expect(existsSync(join(TEST_DIR, '.gemini', 'commands', 'memory.md'))).toBe(true);
   });
 
-  it('should output MCP config with --generate-mcp flag', () => {
-    const output = execSync(`node ${CLI_PATH} init -i augment -y --project-name test --generate-mcp`, {
+  it('should output MCP config with --show-mcp flag', () => {
+    const output = execSync(`node ${CLI_PATH} install -i augment --show-mcp`, {
       cwd: TEST_DIR,
       encoding: 'utf-8',
     });
@@ -89,13 +89,13 @@ describe('init command', () => {
     expect(output).toContain('openmemory-mcp');
   });
 
-  it('should create 6 memory commands', () => {
-    execSync(`node ${CLI_PATH} init -i augment -y --project-name test`, {
+  it('should create 8 memory commands', () => {
+    execSync(`node ${CLI_PATH} install -i augment -y --skip-deps`, {
       cwd: TEST_DIR,
       stdio: 'pipe',
     });
 
-    const commands = ['memory.md', 'mem-status.md', 'mem-search.md', 'mem-sync.md', 'mem-clean.md', 'mem-extract.md'];
+    const commands = ['memory.md', 'mem-status.md', 'mem-search.md', 'mem-sync.md', 'mem-clean.md', 'mem-extract.md', 'mem-decay.md', 'mem-graph.md'];
     for (const cmd of commands) {
       expect(existsSync(join(TEST_DIR, '.augment', 'commands', cmd))).toBe(true);
     }
