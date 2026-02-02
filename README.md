@@ -148,16 +148,16 @@
 - 每次都要解释项目结构
 
 **使用 OpenMemory Plus**:
-```yaml
-# _omp/.memory/project.yaml (自动生成)
-deployment:
-  vercel:
-    url: https://my-app.vercel.app
-    project_id: prj_xxx
-paths:
-  root: /Users/me/projects/my-app
-  src: ./src
-  tests: ./tests
+```markdown
+<!-- _omp/.memory/techContext.md (自动生成) -->
+## 部署配置
+- Vercel URL: https://my-app.vercel.app
+- Project ID: prj_xxx
+
+## 项目路径
+- Root: /Users/me/projects/my-app
+- Src: ./src
+- Tests: ./tests
 ```
 Agent 自动读取，无需重复说明。
 
@@ -194,14 +194,14 @@ openmemory (用户级，跨项目共享):
 - 下次 Agent 可能建议用 MongoDB
 
 **使用 OpenMemory Plus**:
-```yaml
-# _omp/.memory/decisions.yaml (自动记录)
-decisions:
-  - id: dec-2026-02-01
-    title: "数据库选型"
-    choice: "PostgreSQL"
-    alternatives: ["MongoDB", "MySQL"]
-    rationale: "需要复杂查询和事务支持"
+```markdown
+<!-- _omp/.memory/techContext.md (自动记录) -->
+## 技术决策
+
+### 数据库选型 (2026-02-01)
+- **选择**: PostgreSQL
+- **备选**: MongoDB, MySQL
+- **原因**: 需要复杂查询和事务支持
 ```
 Agent 记住决策，不会重复建议已否决的方案。
 
@@ -368,8 +368,8 @@ npx openmemory-plus install
 
 | 信息类型 | 存储位置 | 示例 |
 |----------|----------|------|
-| 项目配置 | `_omp/.memory/project.yaml` | 部署 URL、环境变量、路径 |
-| 技术决策 | `_omp/.memory/decisions.yaml` | 框架选择、架构设计 |
+| 项目配置 | `_omp/.memory/*.md` | 部署 URL、环境变量、路径 |
+| 技术决策 | `_omp/.memory/techContext.md` | 框架选择、架构设计 |
 | 用户偏好 | `openmemory` (MCP) | 语言偏好、代码风格 |
 | 用户技能 | `openmemory` (MCP) | 熟悉的技术栈、经验 |
 
@@ -447,9 +447,11 @@ npx openmemory-plus doctor --fix
 | `/memory` | 显示快速状态 + 子命令菜单 |
 | `/mem status` | 详细记忆状态 |
 | `/mem search {query}` | 语义搜索记忆 |
+| `/mem store` | 手动存储记忆 |
 | `/mem sync` | 检测并解决冲突 |
 | `/mem clean` | 清理 ROT 记忆 |
-| `/mem extract` | 手动触发记忆提取 |
+| `/mem decay` | 时间衰减分析 |
+| `/mem graph` | 知识图谱可视化 |
 
 ---
 
@@ -466,7 +468,9 @@ openmemory-plus/
 │   ├── augment/           # Augment AGENTS.md
 │   ├── claude/            # Claude CLAUDE.md
 │   ├── cursor/            # Cursor 规则
-│   └── gemini/            # Gemini 配置
+│   ├── gemini/            # Gemini 配置
+│   ├── common/            # 通用 AGENTS.md
+│   └── shared/            # 共享模板 (_omp/ 核心文件)
 ├── skills/                # Skill 定义
 │   └── memory-extraction/ # 记忆提取 Skill
 ├── docs/                  # 文档
@@ -478,10 +482,12 @@ openmemory-plus/
 your-project/
 ├── _omp/                      # OpenMemory Plus 核心目录 (所有 IDE 共享)
 │   ├── .memory/               # 项目级记忆存储
-│   │   ├── project.yaml       # 项目配置 (自动生成)
 │   │   ├── activeContext.md   # 活动上下文
 │   │   ├── productContext.md  # 产品上下文
-│   │   └── ...                # 其他上下文文件
+│   │   ├── techContext.md     # 技术上下文
+│   │   ├── systemPatterns.md  # 系统模式
+│   │   ├── progress.md        # 进度记录
+│   │   └── projectbrief.md    # 项目简介
 │   ├── commands/              # Agent 命令
 │   │   ├── memory.md          # 主命令入口
 │   │   └── memory-actions/    # 7 个子动作
@@ -530,9 +536,9 @@ your-project/
         ▼
    ┌─────────────┐
    │ 包含项目特定 │──是──▶ _omp/.memory/ (项目级)
-   │ 信息？      │        ├── project.yaml
-   └─────────────┘        ├── decisions.yaml
-        │ 否              └── changelog.yaml
+   │ 信息？      │        ├── techContext.md
+   └─────────────┘        ├── productContext.md
+        │ 否              └── activeContext.md
         ▼
    ┌─────────────┐
    │ 包含用户偏好 │──是──▶ openmemory (用户级)

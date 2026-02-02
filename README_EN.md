@@ -148,16 +148,16 @@ Have you experienced these problems?
 - Must explain project structure every time
 
 **With OpenMemory Plus**:
-```yaml
-# _omp/.memory/project.yaml (auto-generated)
-deployment:
-  vercel:
-    url: https://my-app.vercel.app
-    project_id: prj_xxx
-paths:
-  root: /Users/me/projects/my-app
-  src: ./src
-  tests: ./tests
+```markdown
+<!-- _omp/.memory/techContext.md (auto-generated) -->
+## Deployment Config
+- Vercel URL: https://my-app.vercel.app
+- Project ID: prj_xxx
+
+## Project Paths
+- Root: /Users/me/projects/my-app
+- Src: ./src
+- Tests: ./tests
 ```
 Agent reads automatically, no need to repeat.
 
@@ -194,14 +194,14 @@ Any project, any IDE, Agent knows your preferences.
 - Next time Agent might suggest MongoDB again
 
 **With OpenMemory Plus**:
-```yaml
-# _omp/.memory/decisions.yaml (auto-recorded)
-decisions:
-  - id: dec-2026-02-01
-    title: "Database Selection"
-    choice: "PostgreSQL"
-    alternatives: ["MongoDB", "MySQL"]
-    rationale: "Need complex queries and transaction support"
+```markdown
+<!-- _omp/.memory/techContext.md (auto-recorded) -->
+## Tech Decisions
+
+### Database Selection (2026-02-01)
+- **Choice**: PostgreSQL
+- **Alternatives**: MongoDB, MySQL
+- **Rationale**: Need complex queries and transaction support
 ```
 Agent remembers decisions, won't suggest rejected options again.
 
@@ -349,8 +349,8 @@ After installation, use in your AI Agent conversations:
 
 | Info Type | Storage Location | Examples |
 |-----------|------------------|----------|
-| Project Config | `_omp/.memory/project.yaml` | Deploy URL, env vars, paths |
-| Tech Decisions | `_omp/.memory/decisions.yaml` | Framework choices, architecture |
+| Project Config | `_omp/.memory/*.md` | Deploy URL, env vars, paths |
+| Tech Decisions | `_omp/.memory/techContext.md` | Framework choices, architecture |
 | User Preferences | `openmemory` (MCP) | Language preference, code style |
 | User Skills | `openmemory` (MCP) | Familiar tech stack, experience |
 
@@ -429,9 +429,11 @@ npx openmemory-plus doctor --fix
 | `/memory` | Show quick status + submenu |
 | `/mem status` | Detailed memory status |
 | `/mem search {query}` | Semantic search memories |
+| `/mem store` | Manually store memories |
 | `/mem sync` | Detect and resolve conflicts |
 | `/mem clean` | Clean ROT memories |
-| `/mem extract` | Manually trigger memory extraction |
+| `/mem decay` | Time decay analysis |
+| `/mem graph` | Knowledge graph visualization |
 
 ---
 
@@ -448,7 +450,9 @@ openmemory-plus/
 │   ├── augment/           # Augment AGENTS.md
 │   ├── claude/            # Claude CLAUDE.md
 │   ├── cursor/            # Cursor rules
-│   └── gemini/            # Gemini config
+│   ├── gemini/            # Gemini config
+│   ├── common/            # Common AGENTS.md
+│   └── shared/            # Shared templates (_omp/ core files)
 ├── skills/                # Skill definitions
 │   └── memory-extraction/ # Memory extraction Skill
 ├── docs/                  # Documentation
@@ -460,10 +464,12 @@ openmemory-plus/
 your-project/
 ├── _omp/                      # OpenMemory Plus core directory (shared by all IDEs)
 │   ├── .memory/               # Project-level memory storage
-│   │   ├── project.yaml       # Project config (auto-generated)
 │   │   ├── activeContext.md   # Active context
 │   │   ├── productContext.md  # Product context
-│   │   └── ...                # Other context files
+│   │   ├── techContext.md     # Tech context
+│   │   ├── systemPatterns.md  # System patterns
+│   │   ├── progress.md        # Progress tracking
+│   │   └── projectbrief.md    # Project brief
 │   ├── commands/              # Agent commands
 │   │   ├── memory.md          # Main command entry
 │   │   └── memory-actions/    # 7 sub-actions
