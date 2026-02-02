@@ -78,11 +78,12 @@ export function getOpenUrlCommand(): string {
 /**
  * Safe command execution using spawn with args array (prevents command injection)
  * Fixes Issue #10: Security - command injection
+ * Fix F2: Added timeout support
  */
 export async function safeExec(
   command: string,
   args: string[],
-  options?: SpawnOptions
+  options?: SpawnOptions & { timeout?: number }
 ): Promise<{ stdout: string; stderr: string; code: number }> {
   return new Promise((resolve, reject) => {
     const proc = spawn(command, args, {
@@ -93,6 +94,13 @@ export async function safeExec(
     let stdout = '';
     let stderr = '';
 
+    // Fix F2: Add timeout support (default 60 seconds)
+    const timeoutMs = options?.timeout ?? 60000;
+    const timer = setTimeout(() => {
+      proc.kill('SIGTERM');
+      reject(new Error(`Command timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
     proc.stdout?.on('data', (data) => {
       stdout += data.toString();
     });
@@ -102,10 +110,12 @@ export async function safeExec(
     });
 
     proc.on('close', (code) => {
+      clearTimeout(timer);
       resolve({ stdout, stderr, code: code ?? 0 });
     });
 
     proc.on('error', (err) => {
+      clearTimeout(timer);
       reject(err);
     });
   });
@@ -114,6 +124,7 @@ export async function safeExec(
 /**
  * Wait for a service to be available with polling
  * Fixes Issue #2: Ollama startup reliability
+ * Fix F3: Added fetch timeout using AbortController
  */
 export async function waitForService(
   url: string,
@@ -122,7 +133,11 @@ export async function waitForService(
 ): Promise<boolean> {
   for (let i = 0; i < maxAttempts; i++) {
     try {
-      const response = await fetch(url);
+      // Fix F3: Add timeout to fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (response.ok || response.status < 500) {
         return true;
       }
@@ -137,19 +152,41 @@ export async function waitForService(
 /**
  * Check if a port is in use
  * Fixes Issue #4: Qdrant race condition - port check
+ * Fix F1: Cross-platform port check (works on Windows too)
  */
 export async function isPortInUse(port: number): Promise<boolean> {
-  try {
-    const { code } = await safeExec('lsof', ['-i', `:${port}`, '-t']);
-    return code === 0;
-  } catch {
-    // Fallback: try to connect
+  const platform = getPlatform();
+
+  // Fix F1: Use platform-specific commands
+  if (platform === 'win32') {
     try {
-      await fetch(`http://localhost:${port}`);
-      return true;
+      const { code, stdout } = await safeExec('netstat', ['-ano'], { timeout: 5000 });
+      if (code === 0 && stdout.includes(`:${port}`)) {
+        return true;
+      }
     } catch {
-      return false;
+      // Fallback to fetch
+    }
+  } else {
+    // macOS/Linux: use lsof
+    try {
+      const { code } = await safeExec('lsof', ['-i', `:${port}`, '-t'], { timeout: 5000 });
+      if (code === 0) {
+        return true;
+      }
+    } catch {
+      // Fallback to fetch
     }
   }
-}
 
+  // Fallback: try to connect with timeout
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    await fetch(`http://localhost:${port}`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    return true;
+  } catch {
+    return false;
+  }
+}

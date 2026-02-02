@@ -158,8 +158,17 @@ async function pullBgeM3(): Promise<boolean> {
     });
 
     // Fix Issue #3: Increase timeout to 30 minutes
+    // Fix F4: Wait for process to terminate after kill
+    let killed = false;
     const timeout = setTimeout(() => {
-      proc.kill();
+      killed = true;
+      proc.kill('SIGTERM');
+      // Give process time to terminate gracefully
+      setTimeout(() => {
+        if (!proc.killed) {
+          proc.kill('SIGKILL');
+        }
+      }, 5000);
       spinner.fail('BGE-M3 下载超时 (30分钟)');
       console.log(chalk.yellow('  请手动运行: ollama pull bge-m3'));
       resolve(false);
@@ -495,8 +504,11 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   const cwd = process.cwd();
   const ompDir = join(cwd, '_omp');
 
+  // Fix F9: Use local variable instead of modifying options object
+  let shouldForce = options.force ?? false;
+
   // Fix Issue #11: Check if already installed
-  if (existsSync(ompDir) && !options.force) {
+  if (existsSync(ompDir) && !shouldForce) {
     console.log(chalk.yellow('⚠️ 检测到已存在的 _omp/ 目录'));
 
     // Check if in interactive mode
@@ -527,10 +539,11 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
         return options.ide?.toLowerCase() || 'augment';
       }
 
+      // Fix F9: Update local variable, not options object
       if (action === 'update') {
-        options.force = false; // Only update commands/skills
+        shouldForce = false; // Only update commands/skills
       } else {
-        options.force = true;
+        shouldForce = true;
       }
     }
   }
