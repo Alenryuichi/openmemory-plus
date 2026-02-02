@@ -126,9 +126,9 @@ export async function checkBgeM3(): Promise<DependencyStatus> {
     if (!response.ok) {
       return { name: 'BGE-M3', installed: false, error: 'Ollama 未运行，无法检测' };
     }
-    const data = await response.json();
+    const data = await response.json() as { models?: Array<{ name: string }> };
     // Exact match: model name should be exactly 'bge-m3' or 'bge-m3:latest'
-    const hasModel = data.models?.some((m: any) =>
+    const hasModel = data.models?.some((m) =>
       m.name === 'bge-m3' || m.name === 'bge-m3:latest' || m.name.startsWith('bge-m3:')
     );
     if (hasModel) {
