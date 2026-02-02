@@ -362,6 +362,9 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
 
   // Process memory template files with project name
   const ompMemoryDir = join(ompDir, '.memory');
+  // Ensure .memory directory exists (may not be in template)
+  mkdirSync(ompMemoryDir, { recursive: true });
+
   if (existsSync(ompMemoryDir)) {
     const memoryFiles = readdirSync(ompMemoryDir);
     for (const file of memoryFiles) {

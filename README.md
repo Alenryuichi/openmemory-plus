@@ -29,8 +29,8 @@
   <a href="#-快速开始">快速开始</a> •
   <a href="#-特性">特性</a> •
   <a href="#-架构">架构</a> •
-  <a href="#-支持的-ide">支持的 IDE</a> •
-  <a href="docs/architecture.md">文档</a>
+  <a href="#️-支持的-ide">支持的 IDE</a> •
+  <a href="./docs/architecture.md">文档</a>
 </p>
 
 ---
