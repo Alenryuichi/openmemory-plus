@@ -1,6 +1,6 @@
 {
   "name": "openmemory-plus",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Agent Memory Management CLI - Install, configure, and manage OpenMemory Plus",
   "type": "module",
   "bin": {
