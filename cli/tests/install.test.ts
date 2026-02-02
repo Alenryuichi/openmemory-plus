@@ -40,7 +40,7 @@ describe('install command', () => {
       stdio: 'pipe',
     });
 
-    expect(existsSync(join(TEST_DIR, '.augment', 'AGENTS.md'))).toBe(true);
+    // Commands and skills in .augment/ (no config file like AGENTS.md)
     expect(existsSync(join(TEST_DIR, '.augment', 'commands', 'memory.md'))).toBe(true);
     expect(existsSync(join(TEST_DIR, '.augment', 'skills', 'memory-extraction', 'SKILL.md'))).toBe(true);
     // _omp structure
@@ -54,7 +54,7 @@ describe('install command', () => {
       stdio: 'pipe',
     });
 
-    expect(existsSync(join(TEST_DIR, '.cursor', '.cursorrules'))).toBe(true);
+    // Commands and skills only (no .cursorrules config file)
     expect(existsSync(join(TEST_DIR, '.cursor', 'commands', 'memory.md'))).toBe(true);
     expect(existsSync(join(TEST_DIR, '.cursor', 'skills', 'memory-extraction', 'SKILL.md'))).toBe(true);
   });
@@ -65,8 +65,9 @@ describe('install command', () => {
       stdio: 'pipe',
     });
 
-    expect(existsSync(join(TEST_DIR, 'CLAUDE.md'))).toBe(true);
+    // Commands only (no CLAUDE.md config file)
     expect(existsSync(join(TEST_DIR, '.claude', 'commands', 'memory.md'))).toBe(true);
+    expect(existsSync(join(TEST_DIR, '.claude', 'skills', 'memory-extraction', 'SKILL.md'))).toBe(true);
   });
 
   it('should create gemini IDE structure', () => {
@@ -75,8 +76,9 @@ describe('install command', () => {
       stdio: 'pipe',
     });
 
-    expect(existsSync(join(TEST_DIR, 'gemini.md'))).toBe(true);
+    // Commands only (no gemini.md config file)
     expect(existsSync(join(TEST_DIR, '.gemini', 'commands', 'memory.md'))).toBe(true);
+    expect(existsSync(join(TEST_DIR, '.gemini', 'skills', 'memory-extraction', 'SKILL.md'))).toBe(true);
   });
 
   it('should output MCP config with --show-mcp flag', () => {

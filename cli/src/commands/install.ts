@@ -30,8 +30,6 @@ interface InstallOptions {
 }
 
 interface IdeConfig {
-  dir: string;
-  configFile: string;
   commandsDir: string;
   skillsDir: string;
 }
@@ -40,13 +38,13 @@ interface IdeConfig {
 // Constants
 // ============================================================================
 
+// Only commands and skills directories - no config files (AGENTS.md, CLAUDE.md, etc.)
 const IDE_CONFIGS: Record<string, IdeConfig> = {
-  // Augment: config at root, commands/skills in .augment/
-  augment: { dir: '.', configFile: 'AGENTS.md', commandsDir: '.augment/commands', skillsDir: '.augment/skills' },
-  claude: { dir: '.', configFile: 'CLAUDE.md', commandsDir: '.claude/commands', skillsDir: '.claude/skills' },
-  cursor: { dir: '.cursor', configFile: '.cursorrules', commandsDir: 'commands', skillsDir: 'skills' },
-  gemini: { dir: '.', configFile: 'gemini.md', commandsDir: '.gemini/commands', skillsDir: '.gemini/skills' },
-  common: { dir: '.', configFile: 'AGENTS.md', commandsDir: '.agents/commands', skillsDir: '.agents/skills' },
+  augment: { commandsDir: '.augment/commands', skillsDir: '.augment/skills' },
+  claude: { commandsDir: '.claude/commands', skillsDir: '.claude/skills' },
+  cursor: { commandsDir: '.cursor/commands', skillsDir: '.cursor/skills' },
+  gemini: { commandsDir: '.gemini/commands', skillsDir: '.gemini/skills' },
+  common: { commandsDir: '.agents/commands', skillsDir: '.agents/skills' },
 };
 
 const BANNER = `
@@ -660,30 +658,22 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   console.log(chalk.green('  ✓ 创建 _omp/skills/ (memory-extraction)'));
 
   // Create IDE-specific directories for each selected IDE
+  // Only copy commands and skills to IDE dir, no config files (AGENTS.md, CLAUDE.md, etc.)
   for (const ide of selectedIdes) {
     const config = IDE_CONFIGS[ide];
     if (!config) continue;
 
-    const ideDir = join(cwd, config.dir);
-    // Augment and common both use AGENTS.md from common template
-    const ideTemplates = join(templatesDir, ide === 'augment' || ide === 'common' ? 'common' : ide);
-
     // Create and copy commands to IDE dir
-    const ideCommandsDir = join(cwd, config.dir, config.commandsDir);
+    const ideCommandsDir = join(cwd, config.commandsDir);
     mkdirSync(ideCommandsDir, { recursive: true });
     copyDir(join(ompDir, 'commands'), ideCommandsDir);
 
     // Create and copy skills to IDE dir
-    const ideSkillsDir = join(cwd, config.dir, config.skillsDir);
+    const ideSkillsDir = join(cwd, config.skillsDir);
     mkdirSync(ideSkillsDir, { recursive: true });
     copyDir(join(ompDir, 'skills'), ideSkillsDir);
 
-    // Copy IDE-specific config file
-    if (existsSync(ideTemplates)) {
-      copyDir(ideTemplates, ideDir);
-    }
-
-    console.log(chalk.green(`  ✓ 配置 ${ide} (${config.dir}/)`));
+    console.log(chalk.green(`  ✓ 配置 ${ide} (${config.commandsDir}/)`));
   }
 
   // Return first IDE for MCP config display
