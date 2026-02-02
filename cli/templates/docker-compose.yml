@@ -1,0 +1,87 @@
+# OpenMemory Plus - Docker Compose Configuration
+# 一键启动所有依赖服务 (Qdrant + Ollama)
+#
+# 使用方法:
+#   启动服务: docker compose up -d
+#   停止服务: docker compose down
+#   查看日志: docker compose logs -f
+#   查看状态: docker compose ps
+#
+# 或使用 CLI:
+#   omp deps up
+#   omp deps down
+#   omp deps status
+
+version: '3.8'
+
+services:
+  # Qdrant 向量数据库
+  # 用于存储用户记忆的向量表示
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: openmemory-qdrant
+    ports:
+      - "6333:6333"   # REST API
+      - "6334:6334"   # gRPC API
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Ollama - 本地 LLM 运行时
+  # 用于运行 BGE-M3 嵌入模型
+  ollama:
+    image: ollama/ollama:latest
+    container_name: openmemory-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # BGE-M3 模型初始化器
+  # 首次启动时自动下载 BGE-M3 模型
+  bge-m3-init:
+    image: ollama/ollama:latest
+    container_name: openmemory-bge-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "🔄 检查 BGE-M3 模型..."
+        if ollama list | grep -q "bge-m3"; then
+          echo "✅ BGE-M3 模型已存在"
+        else
+          echo "📥 下载 BGE-M3 模型 (约 1.2GB)..."
+          OLLAMA_HOST=http://ollama:11434 ollama pull bge-m3
+          echo "✅ BGE-M3 模型下载完成"
+        fi
+    restart: "no"
+
+volumes:
+  qdrant_data:
+    name: openmemory-qdrant-data
+  ollama_data:
+    name: openmemory-ollama-data
+
+networks:
+  default:
+    name: openmemory-network
+
