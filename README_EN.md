@@ -269,11 +269,35 @@ npx openmemory-plus install
 
 The install wizard will guide you through:
 
-1. ✅ Detect system dependencies (Docker, Ollama, Qdrant, BGE-M3)
-2. ✅ Install missing dependencies
+1. ✅ Detect system dependencies (Docker, Qdrant, Ollama, BGE-M3)
+2. ✅ **Docker Compose one-click deploy** (recommended) or native install
 3. ✅ Select IDE type
 4. ✅ Initialize project config
 5. ✅ Show next steps
+
+### 🐳 Docker Compose One-Click Deploy (Recommended)
+
+**Just install Docker, everything else is handled automatically!**
+
+```bash
+# Option 1: Auto-detect and use Docker Compose during install
+npx openmemory-plus install
+
+# Option 2: Explicitly use Docker Compose mode
+npx openmemory-plus install --compose
+
+# Option 3: Manually manage dependency services
+omp deps init      # Initialize config
+omp deps up        # Start services (Qdrant + Ollama + BGE-M3)
+omp deps status    # Check status
+omp deps down      # Stop services
+```
+
+**Benefits:**
+- 🎯 Only need to install Docker
+- ⚡ One command starts all services
+- 📦 BGE-M3 model auto-downloads
+- 💾 Data persists across restarts
 
 ### Basic Usage
 
@@ -291,8 +315,8 @@ After installation, use in your AI Agent conversations:
 | Dependency | Version | Purpose |
 |------------|---------|---------|
 | Node.js | >= 18.0.0 | Run CLI |
-| Docker | Latest | Run Qdrant vector database |
-| Ollama | Latest | Run BGE-M3 embedding model |
+| Docker | Latest | **Only required dependency** (Docker Compose mode) |
+| Ollama | Latest | Run BGE-M3 embedding model (native mode only) |
 
 ---
 
@@ -396,6 +420,9 @@ After installation, use in your AI Agent conversations:
 # Interactive install (recommended)
 npx openmemory-plus install
 
+# Use Docker Compose one-click deploy (recommended)
+npx openmemory-plus install --compose
+
 # Silent install
 npx openmemory-plus install -y
 
@@ -407,6 +434,33 @@ npx openmemory-plus install --skip-deps
 
 # Show MCP config
 npx openmemory-plus install --show-mcp
+```
+
+### 🐳 Dependency Service Management (Docker Compose)
+
+```bash
+# Initialize Docker Compose config
+omp deps init
+
+# Start all dependency services (Qdrant + Ollama + BGE-M3)
+omp deps up
+
+# Pull latest images before starting
+omp deps up --pull
+
+# Stop all services
+omp deps down
+
+# Check service status
+omp deps status
+
+# View service logs
+omp deps logs              # All services
+omp deps logs ollama       # Specific service
+omp deps logs -f           # Follow output
+
+# Manually download BGE-M3 model
+omp deps pull-model
 ```
 
 ### Diagnostic Commands

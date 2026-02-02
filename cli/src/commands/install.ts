@@ -5,7 +5,7 @@ import { spawn } from 'child_process';
 import { existsSync, mkdirSync, copyFileSync, writeFileSync, readdirSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { checkAllDependencies, isSystemReady, type SystemStatus } from '../lib/detector.js';
+import { checkAllDependencies, isSystemReady, type SystemStatus, checkDocker } from '../lib/detector.js';
 import {
   getPlatform,
   isTTY,
@@ -16,6 +16,12 @@ import {
   waitForService,
   isPortInUse,
 } from '../lib/platform.js';
+import {
+  checkDockerCompose,
+  ensureComposeFile,
+  getComposeFilePath,
+  getComposeDir,
+} from './deps.js';
 
 // ============================================================================
 // Types
@@ -27,6 +33,7 @@ interface InstallOptions {
   skipDeps?: boolean;
   showMcp?: boolean;
   force?: boolean; // Fix Issue #11: Add force option
+  compose?: boolean; // Use Docker Compose mode
 }
 
 interface IdeConfig {
@@ -388,8 +395,73 @@ function showMcpConfig(ide: string): void {
 }
 
 // ============================================================================
-// Phase 1: System Dependencies
+// Phase 1: System Dependencies (with Docker Compose support)
 // ============================================================================
+
+/**
+ * Start services using Docker Compose
+ */
+async function startWithDockerCompose(): Promise<boolean> {
+  const spinner = ora('使用 Docker Compose 启动服务...').start();
+
+  try {
+    // Ensure compose file exists
+    const composePath = ensureComposeFile(true);
+    const composeDir = getComposeDir(true);
+
+    spinner.text = '启动 Qdrant + Ollama...';
+
+    // Run docker compose up -d
+    const { code, stderr } = await safeExec('docker', ['compose', '-f', composePath, 'up', '-d'], {
+      cwd: composeDir,
+      timeout: 300000, // 5 minutes
+    });
+
+    if (code !== 0) {
+      throw new Error(stderr || '启动失败');
+    }
+
+    spinner.text = '等待服务就绪...';
+
+    // Wait for Qdrant
+    const qdrantReady = await waitForService('http://localhost:6333/readyz', 60, 1000);
+    if (!qdrantReady) {
+      spinner.warn('Qdrant 启动超时，但服务可能仍在启动中');
+    }
+
+    // Wait for Ollama
+    const ollamaReady = await waitForService('http://localhost:11434/api/tags', 60, 1000);
+    if (!ollamaReady) {
+      spinner.warn('Ollama 启动超时，但服务可能仍在启动中');
+    }
+
+    spinner.succeed('Docker Compose 服务已启动');
+
+    // Check BGE-M3 status
+    console.log(chalk.gray('\n检查 BGE-M3 模型状态...'));
+    try {
+      const response = await fetch('http://localhost:11434/api/tags');
+      const data = await response.json();
+      const hasModel = data.models?.some((m: any) =>
+        m.name === 'bge-m3' || m.name === 'bge-m3:latest' || m.name.startsWith('bge-m3:')
+      );
+      if (hasModel) {
+        console.log(chalk.green('  ✓ BGE-M3 模型已就绪'));
+      } else {
+        console.log(chalk.yellow('  ⚠ BGE-M3 模型正在后台下载 (首次启动需要几分钟)'));
+        console.log(chalk.gray('    查看进度: omp deps logs bge-m3-init'));
+      }
+    } catch {
+      console.log(chalk.yellow('  ⚠ 无法检查模型状态'));
+    }
+
+    return true;
+  } catch (e: any) {
+    spinner.fail('Docker Compose 启动失败');
+    console.log(chalk.red(`   ${e.message}`));
+    return false;
+  }
+}
 
 async function phase1_checkAndInstallDeps(options: InstallOptions): Promise<boolean> {
   console.log(chalk.bold.cyan('\n━━━ 第 1 步: 检测系统依赖 ━━━\n'));
@@ -404,6 +476,7 @@ async function phase1_checkAndInstallDeps(options: InstallOptions): Promise<bool
 
   const spinner = ora('检测系统状态...').start();
   const status = await checkAllDependencies();
+  const hasDockerCompose = status.docker.running ? await checkDockerCompose() : false;
   spinner.stop();
 
   // Show status
@@ -411,6 +484,9 @@ async function phase1_checkAndInstallDeps(options: InstallOptions): Promise<bool
   console.log(
     `  🐳 Docker:      ${status.docker.installed ? (status.docker.running ? chalk.green('✓ 运行中') : chalk.yellow('⚠ 已安装未运行')) : chalk.red('✗ 未安装')}`
   );
+  if (hasDockerCompose) {
+    console.log(chalk.green('  🐳 Compose:     ✓ 可用'));
+  }
   console.log(
     `  🦙 Ollama:      ${status.ollama.installed ? (status.ollama.running ? chalk.green('✓ 运行中') : chalk.yellow('⚠ 已安装未运行')) : chalk.red('✗ 未安装')}`
   );
@@ -435,6 +511,40 @@ async function phase1_checkAndInstallDeps(options: InstallOptions): Promise<bool
     return true;
   }
 
+  // Check if Docker is available for Docker Compose mode
+  if (status.docker.running && hasDockerCompose) {
+    // Recommend Docker Compose mode
+    console.log(chalk.cyan('💡 检测到 Docker Compose 可用，推荐使用一键部署模式\n'));
+
+    let useCompose = options.compose;
+    if (useCompose === undefined && !options.yes) {
+      const { mode } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'mode',
+          message: '选择依赖安装方式:',
+          choices: [
+            { name: '🐳 Docker Compose 一键部署 (推荐)', value: 'compose' },
+            { name: '📦 原生安装 (分别安装各组件)', value: 'native' },
+            { name: '⏭️  跳过依赖安装', value: 'skip' },
+          ],
+          default: 'compose',
+        },
+      ]);
+
+      if (mode === 'skip') {
+        console.log(chalk.yellow('\n已跳过依赖安装，继续项目配置...\n'));
+        return true;
+      }
+      useCompose = mode === 'compose';
+    }
+
+    if (useCompose) {
+      return await startWithDockerCompose();
+    }
+  }
+
+  // Original native installation flow
   // Confirm installation (only in interactive mode)
   if (!options.yes) {
     const { confirm } = await inquirer.prompt([

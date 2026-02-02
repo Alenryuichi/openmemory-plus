@@ -288,11 +288,35 @@ npx openmemory-plus install
 
 安装向导会自动引导你：
 
-1. ✅ 检测系统依赖 (Docker, Ollama, Qdrant, BGE-M3)
-2. ✅ 安装缺失的依赖
+1. ✅ 检测系统依赖 (Docker, Qdrant, Ollama, BGE-M3)
+2. ✅ **Docker Compose 一键部署** (推荐) 或原生安装
 3. ✅ 选择 IDE 类型
 4. ✅ 初始化项目配置
 5. ✅ 显示下一步指引
+
+### 🐳 Docker Compose 一键部署 (推荐)
+
+**只需安装 Docker，其他依赖自动处理！**
+
+```bash
+# 方式 1: 安装时自动检测并使用 Docker Compose
+npx openmemory-plus install
+
+# 方式 2: 显式使用 Docker Compose 模式
+npx openmemory-plus install --compose
+
+# 方式 3: 手动管理依赖服务
+omp deps init      # 初始化配置
+omp deps up        # 启动服务 (Qdrant + Ollama + BGE-M3)
+omp deps status    # 查看状态
+omp deps down      # 停止服务
+```
+
+**优势：**
+- 🎯 只需安装 Docker 一个依赖
+- ⚡ 一键启动所有服务
+- 📦 BGE-M3 模型自动下载
+- 💾 数据持久化，重启不丢失
 
 ### 基本用法
 
@@ -310,8 +334,8 @@ npx openmemory-plus install
 | 依赖 | 版本 | 说明 |
 |------|------|------|
 | Node.js | >= 18.0.0 | 运行 CLI |
-| Docker | 最新版 | 运行 Qdrant 向量数据库 |
-| Ollama | 最新版 | 运行 BGE-M3 嵌入模型 |
+| Docker | 最新版 | **唯一必需依赖** (Docker Compose 模式) |
+| Ollama | 最新版 | 运行 BGE-M3 嵌入模型 (原生模式需要) |
 
 ---
 
@@ -414,6 +438,9 @@ npx openmemory-plus install
 # 交互式安装 (推荐)
 npx openmemory-plus install
 
+# 使用 Docker Compose 一键部署 (推荐)
+npx openmemory-plus install --compose
+
 # 静默安装
 npx openmemory-plus install -y
 
@@ -425,6 +452,33 @@ npx openmemory-plus install --skip-deps
 
 # 显示 MCP 配置
 npx openmemory-plus install --show-mcp
+```
+
+### 🐳 依赖服务管理 (Docker Compose)
+
+```bash
+# 初始化 Docker Compose 配置
+omp deps init
+
+# 启动所有依赖服务 (Qdrant + Ollama + BGE-M3)
+omp deps up
+
+# 启动前拉取最新镜像
+omp deps up --pull
+
+# 停止所有服务
+omp deps down
+
+# 查看服务状态
+omp deps status
+
+# 查看服务日志
+omp deps logs              # 所有服务
+omp deps logs ollama       # 指定服务
+omp deps logs -f           # 持续输出
+
+# 手动下载 BGE-M3 模型
+omp deps pull-model
 ```
 
 ### 诊断命令
