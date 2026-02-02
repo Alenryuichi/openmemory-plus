@@ -33,6 +33,8 @@ jobs:
   publish:
     needs: test  # 测试通过后才发布
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 需要写权限来创建 Release
 
     steps:
       - uses: actions/checkout@v4
