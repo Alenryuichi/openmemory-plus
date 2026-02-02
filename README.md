@@ -4,9 +4,12 @@
 
 OpenMemory Plus 是一个为 AI Agent 设计的统一记忆管理系统，整合项目级 (`.memory/`) 和用户级 (`openmemory` MCP) 双层记忆。
 
+**让任何 AI Agent 在 5 分钟内获得持久记忆能力。**
+
 ## ✨ 特性
 
 - **双层记忆架构**: 项目级 + 用户级分离存储
+- **多 CLI 共享**: Augment, Claude, Cursor, Gemini 共享同一记忆层
 - **智能分类**: 自动判断信息存储位置
 - **语义搜索**: 基于 BGE-M3 的向量检索
 - **冲突检测**: 自动发现两层数据矛盾

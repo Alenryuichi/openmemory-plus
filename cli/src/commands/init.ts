@@ -10,6 +10,7 @@ interface InitOptions {
   ide?: string;
   yes?: boolean;
   projectName?: string;
+  generateMcp?: boolean;
 }
 
 interface IdeConfig {
@@ -30,9 +31,23 @@ const IDE_CONFIGS: Record<string, IdeConfig> = {
 
 function getTemplatesDir(): string {
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  // templates 在 openmemory-plus/templates/，而不是 cli/templates/
-  // 从 cli/src/commands/ 向上 4 级到 openmemory-plus/
-  return join(__dirname, '..', '..', '..', 'templates');
+  // 开发时: cli/src/commands/ -> cli/dist/ (编译后) -> templates/
+  // npm 包: dist/ -> templates/ (在 cli 包根目录)
+  // 尝试多个可能的路径
+  const possiblePaths = [
+    join(__dirname, '..', 'templates'),       // npm 包: dist/../templates
+    join(__dirname, '..', '..', 'templates'), // 开发时 (从 dist/)
+    join(__dirname, '..', '..', '..', 'templates'), // 旧路径 (从 src/)
+  ];
+
+  for (const p of possiblePaths) {
+    if (existsSync(join(p, 'shared'))) {
+      return p;
+    }
+  }
+
+  // 默认返回第一个
+  return possiblePaths[0];
 }
 
 function copyDir(src: string, dest: string): void {
@@ -185,9 +200,50 @@ export async function initCommand(options: InitOptions): Promise<void> {
     copyDir(ideTemplates, join(cwd, config.dir));
     console.log(chalk.green(`  ✓ 复制 IDE 配置文件`));
   }
-  
+
+  // Generate MCP config if requested
+  if (options.generateMcp) {
+    generateMcpConfig(ide!);
+  }
+
   console.log(chalk.green.bold('\n🎉 OpenMemory Plus 初始化完成!\n'));
   console.log(chalk.gray('使用 ') + chalk.cyan('/memory') + chalk.gray(' 查看记忆状态'));
-  console.log(chalk.gray('使用 ') + chalk.cyan('/mem search <query>') + chalk.gray(' 搜索记忆\n'));
+  console.log(chalk.gray('使用 ') + chalk.cyan('/mem search <query>') + chalk.gray(' 搜索记忆'));
+
+  if (!options.generateMcp) {
+    console.log(chalk.gray('\n💡 提示: 运行 ') + chalk.cyan('openmemory-plus init --generate-mcp') + chalk.gray(' 生成 MCP 配置\n'));
+  }
+}
+
+function generateMcpConfig(ide: string): void {
+  console.log(chalk.bold('\n📋 MCP 配置 (复制到 IDE 配置文件):'));
+
+  const mcpConfig = {
+    openmemory: {
+      command: "npx",
+      args: ["-y", "openmemory-mcp"],
+      env: {
+        OPENAI_API_KEY: "your-openai-key-or-use-ollama",
+        MEM0_EMBEDDING_MODEL: "bge-m3",
+        MEM0_EMBEDDING_PROVIDER: "ollama",
+        QDRANT_HOST: "localhost",
+        QDRANT_PORT: "6333"
+      }
+    }
+  };
+
+  console.log(chalk.cyan('\n```json'));
+  console.log(JSON.stringify(mcpConfig, null, 2));
+  console.log(chalk.cyan('```\n'));
+
+  const configPaths: Record<string, string> = {
+    augment: '~/.augment/settings.json (mcpServers 字段)',
+    claude: '~/.config/claude/mcp.json',
+    cursor: '~/.cursor/mcp.json',
+    gemini: '~/.config/gemini/mcp.json',
+    common: '参考各 IDE 的 MCP 配置文档',
+  };
+
+  console.log(chalk.gray(`配置文件位置: ${configPaths[ide] || configPaths.common}`));
 }
 

@@ -27,6 +27,7 @@ program
   .option('-i, --ide <type>', 'IDE type: augment, claude, cursor, gemini, common', 'augment')
   .option('-y, --yes', 'Skip confirmation prompts')
   .option('--project-name <name>', 'Project name for configuration')
+  .option('--generate-mcp', 'Generate MCP configuration snippet')
   .action(initCommand);
 
 program
