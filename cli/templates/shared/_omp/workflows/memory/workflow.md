@@ -71,6 +71,7 @@ This uses **micro-file architecture** with **menu-driven routing**:
 [6] ⏰ 衰减分析    查看记忆衰减状态
 [7] 🔗 知识图谱    查看实体关系
 [8] 📦 记忆整合    合并碎片化记忆
+[9] 📊 质量指标    查看记忆健康度和指标
 
 [M] 返回菜单  [X] 退出
 
@@ -97,6 +98,7 @@ Based on user input, load the corresponding step file:
 | `6` | 衰减, 老化, decay, aging | `./steps/decay.md` |
 | `7` | 图谱, 关系, graph, relation | `./steps/graph.md` |
 | `8` | 整合, 合并, consolidate, merge | `./steps/consolidate.md` |
+| `9` | 指标, 质量, metrics, health | `./steps/metrics.md` |
 | `M` | 菜单, menu | Re-display menu |
 | `X` | 退出, exit, quit | Exit workflow |
 
