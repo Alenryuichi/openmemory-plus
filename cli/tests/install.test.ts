@@ -138,5 +138,48 @@ describe('install command', () => {
     // But still install valid ones
     expect(existsSync(join(TEST_DIR, '.augment', 'commands', 'memory.md'))).toBe(true);
   });
+
+  // H2 Fix: Add tests for --llm option
+  describe('--llm option', () => {
+    it('should accept valid provider via --llm option', () => {
+      const output = execSync(`node ${CLI_PATH} install -i augment -y --skip-deps --llm deepseek`, {
+        cwd: TEST_DIR,
+        encoding: 'utf-8',
+      });
+
+      expect(output).toContain('DeepSeek');
+      expect(existsSync(join(TEST_DIR, '_omp', 'commands', 'memory.md'))).toBe(true);
+    });
+
+    it('should warn about invalid provider in non-interactive mode', () => {
+      const output = execSync(`node ${CLI_PATH} install -i augment -y --skip-deps --llm invalid_provider`, {
+        cwd: TEST_DIR,
+        encoding: 'utf-8',
+      });
+
+      expect(output).toContain('未知的 Provider');
+      expect(output).toContain('invalid_provider');
+      // Should still complete installation
+      expect(existsSync(join(TEST_DIR, '_omp', 'commands', 'memory.md'))).toBe(true);
+    });
+
+    it('should show --llm option in help', () => {
+      const output = execSync(`node ${CLI_PATH} install --help`, {
+        encoding: 'utf-8',
+      });
+
+      expect(output).toContain('--llm');
+      expect(output).toContain('deepseek');
+    });
+
+    it('should copy patches directory for LLM provider support', () => {
+      execSync(`node ${CLI_PATH} install -i augment -y --skip-deps --llm ollama`, {
+        cwd: TEST_DIR,
+        stdio: 'pipe',
+      });
+
+      expect(existsSync(join(TEST_DIR, '_omp', 'patches', 'categorization.py'))).toBe(true);
+    });
+  });
 });
 

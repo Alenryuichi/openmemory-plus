@@ -22,6 +22,12 @@ import {
   getComposeFilePath,
   getComposeDir,
 } from './deps.js';
+import {
+  LLM_PROVIDERS,
+  PROVIDER_CHOICES,
+  getMcpEnvForProvider,
+  validateApiKey,
+} from '../lib/providers.js';
 
 // ============================================================================
 // Types
@@ -34,6 +40,13 @@ interface InstallOptions {
   showMcp?: boolean;
   force?: boolean; // Fix Issue #11: Add force option
   compose?: boolean; // Use Docker Compose mode
+  llm?: string; // LLM Provider for categorization
+}
+
+/** Selected provider state for the install session */
+interface ProviderState {
+  name: string;
+  apiKey?: string;
 }
 
 interface IdeConfig {
@@ -369,25 +382,185 @@ function processTemplate(content: string, projectName: string): string {
     .replace(/\{\{CREATED_AT\}\}/g, now);
 }
 
+// ============================================================================
+// LLM Provider Selection
+// ============================================================================
+
+/**
+ * Select LLM Provider for memory categorization
+ */
+async function selectLlmProvider(options: InstallOptions): Promise<ProviderState> {
+  // If provider specified via CLI option
+  if (options.llm) {
+    const providerName = options.llm.toLowerCase();
+    if (LLM_PROVIDERS[providerName]) {
+      console.log(chalk.green(`  ✓ 使用 LLM Provider: ${LLM_PROVIDERS[providerName].displayName}`));
+      return { name: providerName };
+    } else {
+      // M1 Fix: 无效 Provider 时，在非交互模式下报错退出
+      console.log(chalk.yellow(`  ⚠ 未知的 Provider: ${options.llm}`));
+      console.log(chalk.gray(`    有效选项: ${Object.keys(LLM_PROVIDERS).join(', ')}`));
+      if (!isTTY() || isCI() || options.yes) {
+        // 非交互模式下，无效 Provider 应该退出
+        console.log(chalk.red('  ✗ 非交互模式下必须指定有效的 Provider'));
+        return { name: 'none' };
+      }
+      // 交互模式下，继续让用户选择
+      console.log(chalk.gray('    将进入交互式选择...\n'));
+    }
+  }
+
+  // Non-interactive mode: skip provider selection
+  if (!isTTY() || isCI() || options.yes) {
+    console.log(chalk.gray('  跳过 LLM Provider 配置 (可稍后设置环境变量)'));
+    return { name: 'none' };
+  }
+
+  console.log(chalk.bold.cyan('\n━━━ LLM Provider 配置 ━━━\n'));
+  console.log(chalk.gray('记忆分类功能需要 LLM 服务，选择一个 Provider:\n'));
+
+  const { provider } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'provider',
+      message: '选择 LLM Provider:',
+      choices: [
+        ...PROVIDER_CHOICES,
+        new inquirer.Separator(),
+        { name: '⏭️  跳过 (稍后配置)', value: 'none' },
+      ],
+      default: 'deepseek',
+    },
+  ]);
+
+  if (provider === 'none') {
+    console.log(chalk.yellow('\n已跳过 LLM 配置，记忆分类功能暂时不可用'));
+    console.log(chalk.gray('后续可通过设置环境变量启用\n'));
+    return { name: 'none' };
+  }
+
+  const providerConfig = LLM_PROVIDERS[provider];
+
+  // Ollama doesn't need API key
+  if (provider === 'ollama') {
+    console.log(chalk.green(`\n  ✓ 使用本地 Ollama，无需 API Key`));
+    console.log(chalk.gray(`    请确保已安装模型: ollama pull ${providerConfig.defaultModel}\n`));
+    return { name: provider };
+  }
+
+  // Other providers need API key
+  const { apiKey } = await inquirer.prompt([
+    {
+      type: 'password',
+      name: 'apiKey',
+      message: `请输入 ${providerConfig.displayName} API Key:`,
+      mask: '*',
+      validate: (input: string) => input.length > 0 || '请输入有效的 API Key',
+    },
+  ]);
+
+  // L2 Fix: Validate API Key
+  const { shouldValidate } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'shouldValidate',
+      message: '是否验证 API Key 有效性?',
+      default: true,
+    },
+  ]);
+
+  if (shouldValidate) {
+    const spinner = ora('验证 API Key...').start();
+    const result = await validateApiKey(provider, apiKey);
+
+    if (result.valid) {
+      spinner.succeed(chalk.green('API Key 验证成功'));
+    } else {
+      spinner.fail(chalk.red(`API Key 验证失败: ${result.error}`));
+
+      const { continueAnyway } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'continueAnyway',
+          message: '是否仍然继续使用此 API Key?',
+          default: false,
+        },
+      ]);
+
+      if (!continueAnyway) {
+        console.log(chalk.yellow('\n已取消，请重新运行安装命令'));
+        return { name: 'none' };
+      }
+    }
+  }
+
+  console.log(chalk.green(`\n  ✓ ${providerConfig.displayName} 配置完成`));
+
+  return { name: provider, apiKey };
+}
+
+/**
+ * Generate .env file content for the selected provider
+ */
+function generateEnvFile(providerState: ProviderState): string {
+  const lines = [
+    '# OpenMemory Plus - Environment Configuration',
+    `# Generated: ${new Date().toISOString()}`,
+    '',
+    '# LLM Provider Configuration',
+  ];
+
+  if (providerState.name !== 'none') {
+    const provider = LLM_PROVIDERS[providerState.name];
+    if (provider && provider.envKey && providerState.apiKey) {
+      lines.push(`${provider.envKey}=${providerState.apiKey}`);
+      if (provider.baseUrl && providerState.name !== 'openai') {
+        const baseUrlKey = provider.envKey.replace('_API_KEY', '_BASE_URL');
+        lines.push(`${baseUrlKey}=${provider.baseUrl}`);
+      }
+      lines.push(`LLM_MODEL=${provider.defaultModel}`);
+    }
+  }
+
+  lines.push('');
+  return lines.join('\n');
+}
+
 // Fix Issue #7: Improved MCP configuration guidance
-function showMcpConfig(ide: string): void {
+// M3 Fix: Use getMcpEnvForProvider to avoid code duplication
+function showMcpConfig(ide: string, providerState?: ProviderState): void {
   console.log(chalk.bold('\n📋 MCP 配置 (复制到 IDE 配置文件):'));
 
-  // Fix Issue #7: Clarify that OPENAI_API_KEY is optional when using Ollama
-  console.log(chalk.gray('\n💡 使用本地 Ollama + BGE-M3，无需 OpenAI API Key\n'));
+  const hasProvider = providerState && providerState.name !== 'none';
+
+  if (hasProvider) {
+    const provider = LLM_PROVIDERS[providerState.name];
+    console.log(chalk.gray(`\n💡 使用 ${provider.displayName} 作为 LLM Provider\n`));
+  } else {
+    console.log(chalk.gray('\n💡 使用本地 Ollama + BGE-M3，无需 OpenAI API Key\n'));
+  }
+
+  // M3 Fix: Use getMcpEnvForProvider instead of duplicating logic
+  let env: Record<string, string>;
+  if (hasProvider) {
+    // Get env from helper, but replace actual API key with placeholder
+    env = getMcpEnvForProvider(providerState.name, '<your-api-key>');
+  } else {
+    // Default config without provider
+    env = {
+      MEM0_EMBEDDING_MODEL: 'bge-m3',
+      MEM0_EMBEDDING_PROVIDER: 'ollama',
+      OLLAMA_HOST: 'http://localhost:11434',
+      QDRANT_HOST: 'localhost',
+      QDRANT_PORT: '6333',
+    };
+  }
 
   const mcpConfig = {
     openmemory: {
       command: 'npx',
       args: ['-y', 'openmemory-mcp'],
-      env: {
-        // Fix Issue #7: Remove misleading OPENAI_API_KEY
-        MEM0_EMBEDDING_MODEL: 'bge-m3',
-        MEM0_EMBEDDING_PROVIDER: 'ollama',
-        OLLAMA_HOST: 'http://localhost:11434',
-        QDRANT_HOST: 'localhost',
-        QDRANT_PORT: '6333',
-      },
+      env,
     },
   };
 
@@ -620,7 +793,7 @@ async function phase1_checkAndInstallDeps(options: InstallOptions): Promise<bool
 // Phase 2: Project Configuration
 // ============================================================================
 
-async function phase2_initProject(options: InstallOptions): Promise<string> {
+async function phase2_initProject(options: InstallOptions, providerState?: ProviderState): Promise<string> {
   console.log(chalk.bold.cyan('\n━━━ 第 2 步: 配置项目 ━━━\n'));
 
   const cwd = process.cwd();
@@ -791,6 +964,49 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   console.log(chalk.green(`  ✓ 创建 _omp/workflows/ (${workflowStepsCount} 步骤)`));
   console.log(chalk.green('  ✓ 创建 _omp/skills/ (memory-extraction)'));
 
+  // Copy patches directory (for Docker volume mounting)
+  const patchesTemplateDir = join(templatesDir, 'patches');
+  const patchesDestDir = join(ompDir, 'patches');
+  if (existsSync(patchesTemplateDir)) {
+    mkdirSync(patchesDestDir, { recursive: true });
+    copyDir(patchesTemplateDir, patchesDestDir);
+    console.log(chalk.green('  ✓ 创建 _omp/patches/ (LLM Provider 支持)'));
+  }
+
+  // Generate .env file if provider is configured
+  if (providerState && providerState.name !== 'none' && providerState.apiKey) {
+    const envPath = join(cwd, '.env');
+    // Only create if not exists or force
+    if (!existsSync(envPath) || shouldForce) {
+      const envContent = generateEnvFile(providerState);
+      writeFileSync(envPath, envContent);
+      console.log(chalk.green(`  ✓ 创建 .env (${LLM_PROVIDERS[providerState.name].displayName} 配置)`));
+
+      // H3 Fix: 确保 .gitignore 包含 .env
+      const gitignorePath = join(cwd, '.gitignore');
+      const envEntries = ['.env', '.env.local', '.env*.local'];
+      if (existsSync(gitignorePath)) {
+        const gitignoreContent = readFileSync(gitignorePath, 'utf-8');
+        const missingEntries = envEntries.filter((e) => !gitignoreContent.includes(e));
+        if (missingEntries.length > 0) {
+          const newContent = gitignoreContent.trimEnd() + '\n\n# Environment files (contain API keys)\n' + missingEntries.join('\n') + '\n';
+          writeFileSync(gitignorePath, newContent);
+          console.log(chalk.green('  ✓ 更新 .gitignore (添加 .env 保护)'));
+        }
+      } else {
+        // 创建新的 .gitignore
+        const newGitignore = '# Environment files (contain API keys)\n' + envEntries.join('\n') + '\n';
+        writeFileSync(gitignorePath, newGitignore);
+        console.log(chalk.green('  ✓ 创建 .gitignore (保护 API Key)'));
+      }
+
+      // H3 Fix: 显示安全警告
+      console.log(chalk.yellow('\n  ⚠️  安全提示: .env 文件包含 API Key，请勿提交到 Git!'));
+    } else {
+      console.log(chalk.yellow('  ⚠ .env 已存在，跳过创建 (使用 --force 覆盖)'));
+    }
+  }
+
   // Create IDE-specific directories for each selected IDE
   // Only copy commands and skills - no config files (AGENTS.md, CLAUDE.md, etc.)
   for (const ide of selectedIdes) {
@@ -823,23 +1039,31 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
 // Phase 3: Completion
 // ============================================================================
 
-function phase3_showCompletion(ide: string, showMcp: boolean): void {
+function phase3_showCompletion(ide: string, showMcp: boolean, providerState?: ProviderState): void {
   console.log(chalk.bold.cyan('\n━━━ 安装完成 ━━━\n'));
-  
+
   console.log(chalk.green.bold('🎉 OpenMemory Plus 已成功安装!\n'));
-  
+
+  // Show provider info if configured
+  if (providerState && providerState.name !== 'none') {
+    const provider = LLM_PROVIDERS[providerState.name];
+    console.log(chalk.bold('🤖 LLM Provider: ') + chalk.cyan(provider.displayName));
+    console.log(chalk.gray(`   模型: ${provider.defaultModel}`));
+    console.log('');
+  }
+
   console.log(chalk.bold('💡 下一步:'));
   console.log(chalk.gray('  1. 在 IDE 中打开项目'));
   console.log(chalk.gray('  2. 使用 ') + chalk.cyan('/memory') + chalk.gray(' 打开记忆管理菜单'));
   console.log(chalk.gray('  3. 选择操作或用自然语言描述需求'));
   console.log('');
-  
+
   if (showMcp) {
-    showMcpConfig(ide);
+    showMcpConfig(ide, providerState);
   } else {
     console.log(chalk.gray('📋 查看 MCP 配置: ') + chalk.cyan('npx openmemory-plus install --show-mcp'));
   }
-  
+
   console.log('');
 }
 
@@ -850,20 +1074,23 @@ function phase3_showCompletion(ide: string, showMcp: boolean): void {
 export async function installCommand(options: InstallOptions): Promise<void> {
   // Show banner
   console.log(chalk.cyan(BANNER));
-  
+
   // If only showing MCP config
   if (options.showMcp) {
     const ide = options.ide || 'augment';
     showMcpConfig(ide);
     return;
   }
-  
+
   // Phase 1: Check and install dependencies
   await phase1_checkAndInstallDeps(options);
-  
-  // Phase 2: Initialize project
-  const ide = await phase2_initProject(options);
-  
+
+  // Phase 1.5: Select LLM Provider
+  const providerState = await selectLlmProvider(options);
+
+  // Phase 2: Initialize project (now also handles provider setup)
+  const ide = await phase2_initProject(options, providerState);
+
   // Phase 3: Show completion
-  phase3_showCompletion(ide, false);
+  phase3_showCompletion(ide, false, providerState);
 }

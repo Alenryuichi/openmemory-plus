@@ -1,0 +1,129 @@
+# OpenMemory Plus - Full Stack Docker Compose
+# 完整版：Qdrant + Ollama + BGE-M3 + OpenMemory MCP
+#
+# 使用方法:
+#   启动: docker compose -f docker-compose.full.yml up -d
+#   停止: docker compose -f docker-compose.full.yml down
+#   日志: docker compose -f docker-compose.full.yml logs -f
+#
+# 配置 LLM Provider:
+#   在 .env 文件中设置对应的 API Key:
+#   - DEEPSEEK_API_KEY (推荐)
+#   - MINIMAX_API_KEY
+#   - ZHIPU_API_KEY
+#   - DASHSCOPE_API_KEY (通义千问)
+#   - OPENAI_API_KEY
+
+version: '3.8'
+
+services:
+  # Qdrant 向量数据库
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: openmemory-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Ollama - 本地 LLM 运行时 (用于 BGE-M3 嵌入)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: openmemory-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # BGE-M3 模型初始化器
+  bge-m3-init:
+    image: ollama/ollama:latest
+    container_name: openmemory-bge-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "🔄 检查 BGE-M3 模型..."
+        if ollama list | grep -q "bge-m3"; then
+          echo "✅ BGE-M3 模型已存在"
+        else
+          echo "📥 下载 BGE-M3 模型 (约 1.2GB)..."
+          ollama pull bge-m3
+          echo "✅ BGE-M3 模型下载完成"
+        fi
+    restart: "no"
+
+  # OpenMemory MCP 服务
+  openmemory-mcp:
+    image: mem0ai/openmemory-mcp:latest
+    container_name: openmemory-mcp
+    ports:
+      - "8765:8765"
+    volumes:
+      # 挂载修改后的 categorization.py 以支持多 LLM Provider
+      - ./patches/categorization.py:/app/app/utils/categorization.py:ro
+    environment:
+      # Qdrant 配置
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      # Ollama 配置 (用于 embedding)
+      - OLLAMA_HOST=http://ollama:11434
+      - MEM0_EMBEDDING_MODEL=bge-m3
+      - MEM0_EMBEDDING_PROVIDER=ollama
+      # LLM Provider 配置 (用于记忆分类)
+      # 只需设置一个，系统会自动检测
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY:-}
+      - ZHIPU_API_KEY=${ZHIPU_API_KEY:-}
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      # 可选: 自定义模型
+      - LLM_MODEL=${LLM_MODEL:-}
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      bge-m3-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8765/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  qdrant_data:
+    name: openmemory-qdrant-data
+  ollama_data:
+    name: openmemory-ollama-data
+
+networks:
+  default:
+    name: openmemory-network
+
