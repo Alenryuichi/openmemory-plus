@@ -50,22 +50,23 @@ _omp/                           # OpenMemory Plus 核心目录
 
 ## 分类规则
 
-### 存储位置决策表
+> 📖 **详细规则**: 参见 `references/classification-rules.md`
 
-| 信息类型 | 存储位置 | 识别关键词 |
-|----------|----------|------------|
-| 项目配置 | `_omp/memory/project.yaml` | url, domain, deploy, vercel, config, path |
-| 技术决策 | `_omp/memory/decisions.yaml` | 决定, 选择, 采用, 架构, decision, choose |
-| 变更记录 | `_omp/memory/changelog.yaml` | 更新, 修改, 发布, update, change, release |
-| 用户偏好 | `openmemory` | 偏好, 喜欢, 习惯, prefer, style, always |
-| 用户技能 | `openmemory` | 会, 熟悉, 经验, skill, experience, know |
-| 对话上下文 | `openmemory` | 之前, 上次, 记得, remember, last time |
+### 快速分类指南
 
-### 分类优先级
+| 信号 | Scope | Confidence | 存储位置 |
+|------|-------|------------|----------|
+| "我喜欢/偏好/习惯" | PERSONAL | EXPLICIT | openmemory |
+| "项目使用/配置为" | PROJECT | EXPLICIT | _omp/memory/ |
+| "决定/选择/采用" | PROJECT | EXPLICIT | decisions.yaml |
+| 用户反复使用某模式 | PERSONAL | INFERRED | openmemory |
+| "试试/也许/可能" | EPHEMERAL | UNCERTAIN | 不存储 |
 
-1. **项目相关** → `_omp/memory/` (Git 版本控制)
-2. **用户相关** → `openmemory` (跨项目共享)
-3. **混合信息** → 拆分存储到两个系统
+### 置信度阈值
+
+- **存储阈值**: confidence >= 0.4
+- **自动存储**: confidence >= 0.7
+- **需确认**: 0.4 <= confidence < 0.7
 
 ### 敏感信息过滤
 
@@ -80,14 +81,18 @@ _omp/                           # OpenMemory Plus 核心目录
 
 ### ROT 过滤规则
 
-**不存储的信息**:
+> 📖 **详细规则**: 参见 `references/rot-filter.md`
 
-| 类型 | 示例 |
-|------|------|
-| 琐碎确认 | "好的", "OK", "明白了" |
-| 临时状态 | "正在处理...", "稍等" |
-| 重复信息 | 已存在的相同内容 |
-| 过期信息 | 被明确否定或更新的旧信息 |
+| 类型 | 检测方式 | 处理 |
+|------|----------|------|
+| **Redundant** | 语义相似度 > 0.85 | 合并或跳过 |
+| **Obsolete** | 超过 TTL 且无访问 | 标记或删除 |
+| **Trivial** | 长度 < 10 或匹配阻止模式 | 丢弃 |
+
+**快速判断**:
+- ❌ "好的" / "OK" / "明白了" → Trivial
+- ❌ 与已有记忆相似度 > 0.85 → Redundant
+- ❌ 被明确否定的旧信息 → Obsolete
 
 ## 触发条件
 
@@ -162,7 +167,36 @@ Parameter: query = "{搜索关键词}"
 
 ### Phase 3: 结构化提取
 
-**提取模板**：
+**存储格式** (参见 `templates/memory-entry.yaml.tmpl`):
+
+```yaml
+# 项目记忆示例
+- key: tech-stack
+  value: "TypeScript + React + Vite"
+  metadata:
+    scope: PROJECT
+    confidence: 1.0
+    source: explicit
+    temporality: permanent
+  timestamps:
+    created_at: "2026-02-03T10:00:00Z"
+    updated_at: "2026-02-03T10:00:00Z"
+    last_accessed: "2026-02-03T10:00:00Z"
+  tracking:
+    access_count: 1
+    decay_score: 1.0
+```
+
+**用户记忆** (通过 MCP):
+
+```
+Tool: add_memories_openmemory
+Parameter: text = "[SCOPE:PERSONAL][CONF:0.9] 用户偏好: 2 空格缩进，函数式编程风格"
+```
+
+> 💡 在 text 中嵌入元数据标签，便于后续检索和过滤
+
+**其他提取模板**：
 
 ```yaml
 # 部署变更
@@ -325,14 +359,22 @@ _omp/skills/memory-extraction/scripts/validate.sh
 
 ### 模板文件
 
-- `templates/session.yaml.tmpl` - 新建会话模板
-- `templates/decision.yaml.tmpl` - 新增决策模板
+- `templates/memory-entry.yaml.tmpl` - 记忆条目模板 (含元数据和冲突追踪)
 
-### Schema 验证
+> 💡 **扩展模板**: 如需 session 或 decision 专用模板，可基于 memory-entry.yaml.tmpl 创建
 
-- `_omp/memory/schema/project.schema.json`
-- `_omp/memory/schema/decisions.schema.json`
-- `_omp/memory/schema/session.schema.json`
+### 参考文档
+
+- `references/classification-rules.md` - 多维度分类规则
+- `references/rot-filter.md` - ROT 过滤规则
+- `references/decay-model.md` - Ebbinghaus 衰减模型
+- `references/health-score.md` - 健康度计算公式
+
+### Schema 验证 (可选)
+
+> ⚠️ **待实现**: Schema 验证文件尚未创建，可根据需要添加：
+> - `_omp/memory/schema/project.schema.json`
+> - `_omp/memory/schema/decisions.schema.json`
 
 ---
 
