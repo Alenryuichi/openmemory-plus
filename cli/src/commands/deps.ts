@@ -16,6 +16,19 @@ interface DepsOptions {
   pull?: boolean;
 }
 
+/** Ollama API model info */
+interface OllamaModel {
+  name: string;
+  size?: number;
+  digest?: string;
+  modified_at?: string;
+}
+
+/** Ollama /api/tags response */
+interface OllamaTagsResponse {
+  models?: OllamaModel[];
+}
+
 // ============================================================================
 // Constants
 // ============================================================================
@@ -226,8 +239,8 @@ export async function depsUpCommand(options: DepsOptions): Promise<void> {
       console.log(chalk.gray('\n检查 BGE-M3 模型...'));
       try {
         const response = await fetch('http://localhost:11434/api/tags');
-        const data = await response.json();
-        const hasModel = data.models?.some((m: any) =>
+        const data = await response.json() as OllamaTagsResponse;
+        const hasModel = data.models?.some((m) =>
           m.name === 'bge-m3' || m.name === 'bge-m3:latest' || m.name.startsWith('bge-m3:')
         );
         if (hasModel) {
@@ -305,8 +318,8 @@ export async function depsStatusCommand(options: DepsOptions): Promise<void> {
     try {
       const ollamaRes = await fetch('http://localhost:11434/api/tags');
       if (ollamaRes.ok) {
-        const data = await ollamaRes.json();
-        const hasModel = data.models?.some((m: any) =>
+        const data = await ollamaRes.json() as OllamaTagsResponse;
+        const hasModel = data.models?.some((m) =>
           m.name === 'bge-m3' || m.name === 'bge-m3:latest' || m.name.startsWith('bge-m3:')
         );
         console.log(chalk.green('  ✓ Ollama: 健康'));

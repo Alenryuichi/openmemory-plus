@@ -41,6 +41,19 @@ interface IdeConfig {
   skillsDir: string;
 }
 
+/** Ollama API model info */
+interface OllamaModel {
+  name: string;
+  size?: number;
+  digest?: string;
+  modified_at?: string;
+}
+
+/** Ollama /api/tags response */
+interface OllamaTagsResponse {
+  models?: OllamaModel[];
+}
+
 // ============================================================================
 // Constants
 // ============================================================================
@@ -441,8 +454,8 @@ async function startWithDockerCompose(): Promise<boolean> {
     console.log(chalk.gray('\n检查 BGE-M3 模型状态...'));
     try {
       const response = await fetch('http://localhost:11434/api/tags');
-      const data = await response.json();
-      const hasModel = data.models?.some((m: any) =>
+      const data = await response.json() as OllamaTagsResponse;
+      const hasModel = data.models?.some((m) =>
         m.name === 'bge-m3' || m.name === 'bge-m3:latest' || m.name.startsWith('bge-m3:')
       );
       if (hasModel) {

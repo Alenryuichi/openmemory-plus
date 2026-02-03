@@ -1,11 +1,8 @@
 import chalk from 'chalk';
 import ora from 'ora';
-import inquirer from 'inquirer';
 import { exec } from 'child_process';
-import { promisify } from 'util';
 import { checkAllDependencies, type SystemStatus } from '../lib/detector.js';
-
-const execAsync = promisify(exec);
+import { safeExec } from '../lib/platform.js';
 
 interface DoctorOptions {
   fix?: boolean;
@@ -46,8 +43,8 @@ function diagnoseIssues(status: SystemStatus): Issue[] {
       severity: 'error',
       fix: async () => {
         try {
-          await execAsync('brew install ollama');
-          return true;
+          const { code } = await safeExec('brew', ['install', 'ollama']);
+          return code === 0;
         } catch {
           return false;
         }
@@ -77,15 +74,23 @@ function diagnoseIssues(status: SystemStatus): Issue[] {
       severity: 'error',
       fix: async () => {
         try {
-          await execAsync('docker start qdrant || docker run -d --name qdrant -p 6333:6333 -p 6334:6334 qdrant/qdrant');
-          return true;
+          // Try to start existing container first
+          const { code } = await safeExec('docker', ['start', 'qdrant']);
+          if (code === 0) return true;
+          // If no container exists, create one
+          const { code: runCode } = await safeExec('docker', [
+            'run', '-d', '--name', 'qdrant',
+            '-p', '6333:6333', '-p', '6334:6334',
+            'qdrant/qdrant'
+          ]);
+          return runCode === 0;
         } catch {
           return false;
         }
       },
     });
   }
-  
+
   if (!status.bgeM3.installed) {
     issues.push({
       name: 'BGE-M3 模型未下载',
@@ -93,8 +98,8 @@ function diagnoseIssues(status: SystemStatus): Issue[] {
       severity: 'warning',
       fix: async () => {
         try {
-          await execAsync('ollama pull bge-m3', { timeout: 600000 });
-          return true;
+          const { code } = await safeExec('ollama', ['pull', 'bge-m3'], { timeout: 600000 });
+          return code === 0;
         } catch {
           return false;
         }
