@@ -1,0 +1,40 @@
+# Memory Entry Template
+# 用于项目级记忆存储
+#
+# ============================================
+# 使用说明 (Agent 参考)
+# ============================================
+# 变量占位符:
+#   {{key}}            - 记忆键 (唯一标识)
+#   {{value}}          - 记忆值 (内容)
+#   {{scope}}          - 作用域 (PROJECT | PERSONAL | UNIVERSAL)
+#   {{confidence}}     - 置信度 (0.0 - 1.0)
+#   {{source}}         - 来源 (explicit | inferred | imported)
+#   {{temporality}}    - 时间性 (permanent | contextual | ephemeral)
+#   {{created_at}}     - 创建时间 (ISO 8601)
+#   {{updated_at}}     - 更新时间 (ISO 8601)
+#   {{last_accessed}}  - 最后访问时间 (ISO 8601)
+#   {{access_count}}   - 访问计数
+#   {{decay_score}}    - 衰减分数 (0.0 - 1.0)
+#   {{conflict_status}} - 冲突状态 (none | detected | resolved)
+#   {{conflict_related_id}} - 关联冲突记忆 ID (可选)
+# ============================================
+
+- key: "{{key}}"
+  value: "{{value}}"
+  metadata:
+    scope: "{{scope}}"           # PROJECT | PERSONAL | UNIVERSAL
+    confidence: {{confidence}}   # 0.0 - 1.0
+    source: "{{source}}"         # explicit | inferred | imported
+    temporality: "{{temporality}}" # permanent | contextual | ephemeral
+  timestamps:
+    created_at: "{{created_at}}"
+    updated_at: "{{updated_at}}"
+    last_accessed: "{{last_accessed}}"
+  tracking:
+    access_count: {{access_count}}
+    decay_score: {{decay_score}}
+  conflict:
+    status: "{{conflict_status}}"           # none | detected | resolved
+    related_id: "{{conflict_related_id}}"   # ID of conflicting memory (if any)
+
