@@ -55,10 +55,19 @@ triviality:
   min_length: 10  # 字符
   min_info_density: 0.3
   blocked_patterns:
-    - "^(好的|OK|明白|收到)$"
-    - "^(稍等|正在处理).*"
-    - "^(是的|对|嗯)$"
+    # 中文确认词
+    - "^(好的|OK|明白|收到|了解|知道了)$"
+    - "^(稍等|正在处理|请稍候).*"
+    - "^(是的|对|嗯|行|可以)$"
+    # 英文确认词
+    - "^(ok|okay|sure|yes|yep|yeah|got it|roger|understood)$"i
+    - "^(thanks|thank you|thx|ty)$"i
+    - "^(wait|waiting|processing).*"i
+    # 通用短语
+    - "^(hmm|hm|ah|oh|uh)$"i
 ```
+
+> 💡 **注意**: `i` 后缀表示不区分大小写匹配
 
 ### 可操作性检测
 

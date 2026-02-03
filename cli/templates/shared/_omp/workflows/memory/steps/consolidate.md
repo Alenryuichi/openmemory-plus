@@ -61,9 +61,19 @@ For each memory M:
 ### 4. Execute Merge
 
 For each approved merge:
-1. Create consolidated memory
-2. Delete original fragments
-3. Update references
+
+```
+1. Backup: Save original memories to temp storage
+2. Create: Create consolidated memory with merged content
+3. Verify: Confirm new memory was created successfully
+4. Delete: Delete original fragments one by one
+5. Update: Update any references to old IDs
+
+Error Handling:
+- IF step 2 fails → Abort, no changes made
+- IF step 4 fails → Rollback: delete new memory, restore from backup
+- IF step 5 fails → Log warning, continue (non-critical)
+```
 
 ### 5. Display Result
 

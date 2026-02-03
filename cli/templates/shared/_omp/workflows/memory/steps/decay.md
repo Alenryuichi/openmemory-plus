@@ -60,9 +60,10 @@ Cap at 0.5 maximum
 For each memory:
 ```
 days_since_access = today - last_access_date
-Retention(t) = e^(-days_since_access/S) × (1 + importance_boost)
+base_retention = e^(-days_since_access/S)
+Retention(t) = base_retention + importance_boost × (1 - base_retention)
 
-Clamp result to [0, 1]
+# Result is guaranteed to be in [0, 1] by formula design
 ```
 
 ### 5. Classify by Status

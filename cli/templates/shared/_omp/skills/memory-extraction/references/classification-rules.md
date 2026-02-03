@@ -13,12 +13,17 @@
 
 ### Dimension 2: Confidence (置信度)
 
-| Level | 定义 | 处理方式 |
-|------|------|----------|
-| EXPLICIT (1.0) | 用户明确陈述 | 直接存储 |
-| INFERRED (0.7) | 从行为推断 | 存储但标记 |
-| UNCERTAIN (0.4) | 需要确认 | 询问用户 |
-| NOISE (<0.3) | 噪音信息 | 丢弃 |
+| Level | 范围 | 定义 | 处理方式 |
+|------|------|------|----------|
+| EXPLICIT | >= 0.9 | 用户明确陈述 | 直接存储 |
+| INFERRED | 0.7 - 0.9 | 从行为推断 | 存储但标记 |
+| UNCERTAIN | 0.4 - 0.7 | 需要确认 | 询问用户后存储 |
+| NOISE | < 0.4 | 噪音信息 | 丢弃 |
+
+> ⚠️ **阈值说明**:
+> - **存储阈值**: confidence >= 0.4 (UNCERTAIN 及以上)
+> - **自动存储**: confidence >= 0.7 (INFERRED 及以上)
+> - **需确认**: 0.4 <= confidence < 0.7 (UNCERTAIN 区间)
 
 ### Dimension 3: Temporality (时效性)
 

@@ -359,14 +359,22 @@ _omp/skills/memory-extraction/scripts/validate.sh
 
 ### 模板文件
 
-- `templates/session.yaml.tmpl` - 新建会话模板
-- `templates/decision.yaml.tmpl` - 新增决策模板
+- `templates/memory-entry.yaml.tmpl` - 记忆条目模板 (含元数据和冲突追踪)
 
-### Schema 验证
+> 💡 **扩展模板**: 如需 session 或 decision 专用模板，可基于 memory-entry.yaml.tmpl 创建
 
-- `_omp/memory/schema/project.schema.json`
-- `_omp/memory/schema/decisions.schema.json`
-- `_omp/memory/schema/session.schema.json`
+### 参考文档
+
+- `references/classification-rules.md` - 多维度分类规则
+- `references/rot-filter.md` - ROT 过滤规则
+- `references/decay-model.md` - Ebbinghaus 衰减模型
+- `references/health-score.md` - 健康度计算公式
+
+### Schema 验证 (可选)
+
+> ⚠️ **待实现**: Schema 验证文件尚未创建，可根据需要添加：
+> - `_omp/memory/schema/project.schema.json`
+> - `_omp/memory/schema/decisions.schema.json`
 
 ---
 

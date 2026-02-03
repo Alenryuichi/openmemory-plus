@@ -29,30 +29,13 @@ Call `list_memories_openmemory`:
 
 ### 3. Calculate Health Score
 
-Before displaying status, calculate the overall health score:
+> 📖 **公式详情**: 参见 `skills/memory-extraction/references/health-score.md`
 
-```python
-def calculate_health_score(memories):
-    total = len(memories)
-    if total == 0:
-        return 100  # Perfect score if no memories
-
-    active_count = count_by_status(memories, 'active')
-    rot_count = count_by_status(memories, 'stale') + count_by_status(memories, 'cleanup')
-
-    active_ratio = active_count / total
-    rot_ratio = rot_count / total
-    avg_confidence = mean([m.confidence for m in memories])
-    conflict_ratio = count_conflicts(memories) / total
-
-    score = (
-        active_ratio * 0.3 +
-        (1 - rot_ratio) * 0.2 +
-        avg_confidence * 0.3 +
-        (1 - conflict_ratio) * 0.2
-    )
-    return int(score * 100)
-```
+Calculate the overall health score using the standard formula:
+- **活跃率** (30%): Active 状态记忆占比
+- **ROT 比例** (20%): Stale + Cleanup 占比 (越低越好)
+- **平均置信度** (30%): 所有记忆的平均置信度
+- **冲突率** (20%): 存在冲突的记忆占比 (越低越好)
 
 Health emoji mapping:
 - >= 80: ✅ (Excellent)

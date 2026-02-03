@@ -28,21 +28,15 @@ description: 显示记忆系统的质量指标和健康度
 
 ### Quality Score
 
-```python
-def calculate_quality_score():
-    active_ratio = count_active() / total()
-    rot_ratio = count_rot() / total()
-    avg_confidence = mean(all_confidence)
-    conflict_ratio = count_conflicts() / total()
-    
-    score = (
-        active_ratio * 0.3 +
-        (1 - rot_ratio) * 0.2 +
-        avg_confidence * 0.3 +
-        (1 - conflict_ratio) * 0.2
-    )
-    return score * 100
-```
+> 📖 **公式详情**: 参见 `skills/memory-extraction/references/health-score.md`
+
+健康度计算使用标准公式，综合以下四个指标：
+- **活跃率** (30% 权重): Active 状态记忆占比
+- **ROT 比例** (20% 权重): Stale + Cleanup 占比，越低越好
+- **平均置信度** (30% 权重): 所有记忆的平均置信度
+- **冲突率** (20% 权重): 存在冲突的记忆占比，越低越好
+
+最终分数 = 加权求和 × 100，范围 0-100
 
 ---
 

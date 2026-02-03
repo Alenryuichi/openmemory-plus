@@ -16,6 +16,8 @@
 #   {{last_accessed}}  - 最后访问时间 (ISO 8601)
 #   {{access_count}}   - 访问计数
 #   {{decay_score}}    - 衰减分数 (0.0 - 1.0)
+#   {{conflict_status}} - 冲突状态 (none | detected | resolved)
+#   {{conflict_related_id}} - 关联冲突记忆 ID (可选)
 # ============================================
 
 - key: "{{key}}"
@@ -32,4 +34,7 @@
   tracking:
     access_count: {{access_count}}
     decay_score: {{decay_score}}
+  conflict:
+    status: "{{conflict_status}}"           # none | detected | resolved
+    related_id: "{{conflict_related_id}}"   # ID of conflicting memory (if any)
 

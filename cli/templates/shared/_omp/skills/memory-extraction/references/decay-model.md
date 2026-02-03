@@ -3,13 +3,18 @@
 ## Ebbinghaus 变体公式
 
 ```
-Retention(t) = e^(-t/S) × (1 + importance_boost)
+base_retention = e^(-t/S)
+Retention(t) = base_retention + importance_boost × (1 - base_retention)
 
 其中:
 - t = 距离上次访问的天数
 - S = 强度因子 (初始 30，每次访问 +10)
 - importance_boost = 重要性加成 (0-0.5)
+- 结果保证在 [0, 1] 范围内
 ```
+
+> 💡 **公式解释**: importance_boost 将 base_retention 向 1.0 方向提升，
+> 但永远不会超过 1.0。例如 base=0.5, boost=0.5 → 0.5 + 0.5×0.5 = 0.75
 
 ## 强度因子 (S) 计算
 
