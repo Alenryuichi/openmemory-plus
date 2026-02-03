@@ -5,6 +5,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    // Increase timeout for CLI tests that spawn child processes
+    testTimeout: 30000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
