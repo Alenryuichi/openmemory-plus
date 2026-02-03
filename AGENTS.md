@@ -1,107 +1,122 @@
-# OpenMemory Plus - AI Agent 配置
+# OpenMemory Plus - 项目开发指南
 
-本文件为 AI Agent 提供记忆管理能力配置。
+本文件为 AI Agent 在 openmemory-plus 仓库中工作时提供上下文。
 
-## 快速启用
+## 项目概述
 
-在对话开始时，Agent 应自动加载此配置以获取记忆管理能力。
+**OpenMemory Plus** 是一个 CLI 工具，用于为 AI Agent 安装和配置双层记忆系统。
 
-## 命令入口
+- **npm 包名**: `openmemory-plus`
+- **CLI 命令**: `openmemory-plus` 或 `omp`
+- **技术栈**: TypeScript, Node.js (>=18), ESM
 
-| 命令 | 说明 | 文件 |
-|------|------|------|
-| `/memory` | 统一入口 | `commands/memory.md` |
-
-**只需一个命令 `/memory`，其余通过菜单选择或自然语言描述。**
-
-## 核心目录
+## 项目结构
 
 ```
-_omp/                           # OpenMemory Plus 核心目录
-├── commands/
-│   └── memory.md               # 轻量入口 (跳转到 workflow)
-├── workflows/
-│   └── memory/
-│       ├── workflow.md         # 主工作流 (含菜单)
-│       └── steps/              # 7 个步骤文件
-│           ├── status.md
-│           ├── search.md
-│           ├── store.md
-│           ├── clean.md
-│           ├── sync.md
-│           ├── decay.md
-│           └── graph.md
-├── skills/
-│   └── memory-extraction/      # 自动提取 Skill (含分类规则)
-└── memory/                    # 项目级记忆
-    ├── project.yaml            # 项目配置 (SSOT)
-    └── *.md                    # 上下文文件
+openmemory-plus/
+├── cli/                        # CLI 工具源码
+│   ├── src/
+│   │   ├── index.ts            # 入口文件
+│   │   ├── commands/           # 命令实现
+│   │   │   ├── install.ts      # 主安装命令 (3 阶段)
+│   │   │   ├── status.ts       # 系统状态检查
+│   │   │   └── doctor.ts       # 诊断修复
+│   │   └── lib/                # 核心库
+│   │       ├── detector.ts     # 依赖检测 (Docker, Ollama, Qdrant)
+│   │       └── platform.ts     # 跨平台工具
+│   ├── templates/              # 导出模板
+│   │   └── shared/_omp/        # 用户项目模板
+│   └── tests/                  # 测试文件
+├── AGENTS.md                   # 本文件 (不导出)
+├── README.md                   # 用户文档
+└── CONTRIBUTING.md             # 贡献指南
 ```
 
-## 自动行为
+## 开发命令
 
-### 对话开始时
+```bash
+cd cli
 
-1. 搜索 `openmemory` 获取用户上下文
-2. 加载 `_omp/memory/project.yaml` 获取项目配置
-3. 融合上下文提供个性化响应
+# 安装依赖
+npm install
 
-### 对话结束时
+# 本地开发 (使用 tsx)
+npm run dev -- install --help
 
-1. 检测有价值信息
-2. 按分类规则路由存储
-3. 项目级 → `_omp/memory/`
-4. 用户级 → `openmemory`
+# 构建
+npm run build
 
-## 分类规则
+# 测试
+npm test                    # 运行所有测试
+npm run test:watch          # 监听模式
+npm run test:coverage       # 覆盖率报告
 
-分类规则已内嵌在 `_omp/skills/memory-extraction/SKILL.md` 中。
+# 本地测试 CLI
+node dist/index.js install --help
+```
 
-### 快速参考
+## CLI 命令
 
-| 存储位置 | 信息类型 |
-|----------|----------|
-| `_omp/memory/` | 项目配置、技术决策、部署信息 |
-| `openmemory` | 用户偏好、技能、跨项目上下文 |
-
-## Skill
-
-### memory-extraction
-
-**位置**: `_omp/skills/memory-extraction/SKILL.md`
-
-**触发**:
-- 对话结束时自动执行
-- `/memory` → 选择 3 (存储记忆)
-
-**功能**:
-- 检测有价值信息
-- 智能分类路由
-- 双层存储
-- 冲突检测
-
-## MCP 工具
-
-Agent 可使用以下 OpenMemory MCP 工具:
-
-| 工具 | 用途 |
+| 命令 | 描述 |
 |------|------|
-| `add_memories_openmemory` | 添加用户级记忆 |
-| `search_memory_openmemory` | 语义搜索记忆 |
-| `list_memories_openmemory` | 列出所有记忆 |
-| `delete_memories_openmemory` | 删除指定记忆 |
+| `install` | 一键安装 (默认命令) |
+| `status` | 检查系统依赖状态 |
+| `doctor` | 诊断并修复问题 |
 
-## 降级策略
+### install 命令选项
 
-当 `openmemory` MCP 不可用时:
+- `-y, --yes`: 跳过确认提示
+- `-i, --ide <type>`: 指定 IDE (augment/claude/cursor/gemini/common)
+- `--skip-deps`: 跳过依赖安装
+- `--show-mcp`: 显示 MCP 配置
+- `-f, --force`: 强制覆盖
 
-1. 用户级信息临时存入 `_omp/memory/user-context.yaml`
-2. 提示用户检查 MCP 服务状态
-3. 下次可用时自动同步
+## 安装流程 (3 阶段)
 
-## 版本
+1. **Phase 1**: 检测并安装依赖 (Docker, Ollama, Qdrant, BGE-M3)
+2. **Phase 2**: 初始化项目 (复制模板到 `_omp/`, 配置 IDE)
+3. **Phase 3**: 显示完成信息和 MCP 配置
 
-- **版本**: v2.0
-- **日期**: 2026-02-02
-- **兼容**: Augment, Claude Code, Cursor, Gemini
+## 模板管理
+
+`cli/templates/shared/_omp/` 包含导出到用户项目的文件：
+
+| 目录 | 内容 |
+|------|------|
+| `commands/` | `/memory` 命令入口 |
+| `workflows/` | 记忆管理工作流 (7 个步骤) |
+| `skills/` | memory-extraction Skill |
+| `memory/` | 项目记忆模板文件 |
+
+**注意**: `AGENTS.md` 等根目录配置文件**不会**被导出。
+
+## 测试
+
+测试文件位于 `cli/tests/`：
+
+- `cli.test.ts` - CLI 入口测试
+- `install.test.ts` - 安装命令测试
+- `detector.test.ts` - 依赖检测测试
+- `doctor.test.ts` - 诊断命令测试
+- `status.test.ts` - 状态命令测试
+
+## 发布
+
+```bash
+cd cli
+npm run prepublishOnly  # 构建 + 测试
+npm publish
+```
+
+## 代码规范
+
+- TypeScript + ESM
+- Conventional Commits (`feat:`, `fix:`, `docs:` 等)
+- 使用 Vitest 进行测试
+
+## 相关文档
+
+- [README.md](./README.md) - 用户文档
+- [CONTRIBUTING.md](./CONTRIBUTING.md) - 贡献指南
+- [cli/README.md](./cli/README.md) - CLI 详细文档 (如有)
 
