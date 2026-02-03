@@ -167,7 +167,36 @@ Parameter: query = "{搜索关键词}"
 
 ### Phase 3: 结构化提取
 
-**提取模板**：
+**存储格式** (参见 `templates/memory-entry.yaml.tmpl`):
+
+```yaml
+# 项目记忆示例
+- key: tech-stack
+  value: "TypeScript + React + Vite"
+  metadata:
+    scope: PROJECT
+    confidence: 1.0
+    source: explicit
+    temporality: permanent
+  timestamps:
+    created_at: "2026-02-03T10:00:00Z"
+    updated_at: "2026-02-03T10:00:00Z"
+    last_accessed: "2026-02-03T10:00:00Z"
+  tracking:
+    access_count: 1
+    decay_score: 1.0
+```
+
+**用户记忆** (通过 MCP):
+
+```
+Tool: add_memories_openmemory
+Parameter: text = "[SCOPE:PERSONAL][CONF:0.9] 用户偏好: 2 空格缩进，函数式编程风格"
+```
+
+> 💡 在 text 中嵌入元数据标签，便于后续检索和过滤
+
+**其他提取模板**：
 
 ```yaml
 # 部署变更
