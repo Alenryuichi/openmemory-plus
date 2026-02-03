@@ -589,6 +589,35 @@ your-project/
 
 ---
 
+## 🔄 Comparison with Other Solutions
+
+| Feature | OpenMemory Plus | Pure openmemory MCP | Native mem0 SDK | Manual .env | Notion/Docs |
+|---------|-----------------|---------------------|-----------------|-------------|-------------|
+| Auto Extraction | ✅ Auto-trigger at conversation end | ⚠️ Agent must call manually | ⚠️ Requires code call add() | ❌ | ❌ |
+| Dual-Layer | ✅ Project + User | ❌ User-level only | ❌ User-level only | ❌ Project-level only | ❌ |
+| Multi-IDE Sharing | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Git Version Control | ✅ Project-level traceable | ❌ | ❌ | ✅ | ❌ |
+| Semantic Search | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Smart Classification | ✅ Auto 7-type classification | ❌ Requires manual metadata | ❌ Requires manual metadata | ❌ | ❌ |
+| Sensitive Info Filter | ✅ Auto-block storage | ⚠️ Has PII detection | ⚠️ Has PII detection | ❌ | ❌ |
+| One-Click Install | ✅ `npx omp install` | ⚠️ Manual MCP config | ❌ Code integration | ❌ | ❌ |
+| ROT Memory Cleanup | ✅ Auto-detect redundant/obsolete | ❌ | ❌ | ❌ | ❌ |
+| Ebbinghaus Decay | ✅ Forgetting curve model | ❌ | ❌ | ❌ | ❌ |
+
+> **Legend**: ✅ Full Support | ⚠️ Partial Support | ❌ Not Supported
+
+### Key Differences
+
+| Comparison | OpenMemory Plus | Pure openmemory MCP |
+|------------|-----------------|---------------------|
+| **Memory Trigger** | Auto-extract at conversation end, no user intervention | Agent must call `add_memories` tool |
+| **Project Context** | `_omp/memory/` stores project decisions & architecture | No project-level memory, all mixed at user level |
+| **Memory Classification** | Auto-classify into preferences/decisions/patterns | Requires manual metadata parameter |
+| **Memory Health** | ROT detection + health scoring + decay model | None, memories only increase |
+| **IDE Configuration** | Auto-generate AGENTS.md/CLAUDE.md etc. | Manual config for each IDE |
+
+---
+
 ## ❓ FAQ
 
 <details>
