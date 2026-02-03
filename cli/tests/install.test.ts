@@ -13,6 +13,11 @@ describe('install command', () => {
       rmSync(TEST_DIR, { recursive: true, force: true });
     }
     mkdirSync(TEST_DIR, { recursive: true });
+    // Initialize git repo (required for install command)
+    execSync('git init -q && git config user.email "test@test.com" && git config user.name "Test"', {
+      cwd: TEST_DIR,
+      stdio: 'pipe',
+    });
   });
 
   afterEach(() => {
@@ -141,26 +146,45 @@ describe('install command', () => {
 
   // H2 Fix: Add tests for --llm option
   describe('--llm option', () => {
+    const LLM_TEST_DIR = '/tmp/omp-test-llm';
+
+    beforeEach(() => {
+      if (existsSync(LLM_TEST_DIR)) {
+        rmSync(LLM_TEST_DIR, { recursive: true, force: true });
+      }
+      mkdirSync(LLM_TEST_DIR, { recursive: true });
+      execSync('git init -q && git config user.email "test@test.com" && git config user.name "Test"', {
+        cwd: LLM_TEST_DIR,
+        stdio: 'pipe',
+      });
+    });
+
+    afterEach(() => {
+      if (existsSync(LLM_TEST_DIR)) {
+        rmSync(LLM_TEST_DIR, { recursive: true, force: true });
+      }
+    });
+
     it('should accept valid provider via --llm option', () => {
       const output = execSync(`node ${CLI_PATH} install -i augment -y --skip-deps --llm deepseek`, {
-        cwd: TEST_DIR,
+        cwd: LLM_TEST_DIR,
         encoding: 'utf-8',
       });
 
       expect(output).toContain('DeepSeek');
-      expect(existsSync(join(TEST_DIR, '_omp', 'commands', 'memory.md'))).toBe(true);
+      expect(existsSync(join(LLM_TEST_DIR, '_omp', 'commands', 'memory.md'))).toBe(true);
     });
 
     it('should warn about invalid provider in non-interactive mode', () => {
       const output = execSync(`node ${CLI_PATH} install -i augment -y --skip-deps --llm invalid_provider`, {
-        cwd: TEST_DIR,
+        cwd: LLM_TEST_DIR,
         encoding: 'utf-8',
       });
 
       expect(output).toContain('未知的 Provider');
       expect(output).toContain('invalid_provider');
       // Should still complete installation
-      expect(existsSync(join(TEST_DIR, '_omp', 'commands', 'memory.md'))).toBe(true);
+      expect(existsSync(join(LLM_TEST_DIR, '_omp', 'commands', 'memory.md'))).toBe(true);
     });
 
     it('should show --llm option in help', () => {
@@ -174,11 +198,11 @@ describe('install command', () => {
 
     it('should copy patches directory for LLM provider support', () => {
       execSync(`node ${CLI_PATH} install -i augment -y --skip-deps --llm ollama`, {
-        cwd: TEST_DIR,
+        cwd: LLM_TEST_DIR,
         stdio: 'pipe',
       });
 
-      expect(existsSync(join(TEST_DIR, '_omp', 'patches', 'categorization.py'))).toBe(true);
+      expect(existsSync(join(LLM_TEST_DIR, '_omp', 'patches', 'categorization.py'))).toBe(true);
     });
   });
 
