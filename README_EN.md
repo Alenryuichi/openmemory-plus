@@ -41,6 +41,21 @@
 
 > **Give any AI Agent persistent memory in 5 minutes.**
 
+### 📸 Demo
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="images/auto_memory_execute.png" alt="Auto Memory Extraction" width="100%"><br>
+      <sub><b>Auto Memory Extraction</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="images/auto_memory_result.png" alt="Extraction Result" width="100%"><br>
+      <sub><b>Extraction Result</b></sub>
+    </td>
+  </tr>
+</table>
+
 ---
 
 ## 💡 Why OpenMemory Plus?
@@ -327,14 +342,28 @@ After installation, use in your AI Agent conversations:
 - 🔄 **Dual-Layer Memory** — Project-level + User-level separated storage
 - 🎯 **Smart Classification** — Auto-determine where to store information
 - 🔍 **Semantic Search** — Multi-language vector search with BGE-M3
-- ⚡ **Auto-Extraction** — Auto-save valuable info at conversation end
+- ⚡ **Event-Driven Extraction** — Auto-trigger memory extraction Skill at conversation end
 - 🔐 **Sensitive Info Filter** — Auto-detect and block API Keys, passwords
+
+### 🤖 Multi-LLM Support <sup>NEW</sup>
+
+Support multiple LLM Providers for memory classification:
+
+| Provider | Model | Notes |
+|----------|-------|-------|
+| **DeepSeek** | deepseek-chat | 🔥 Recommended, cost-effective |
+| **MiniMax** | abab6.5s-chat | Chinese optimized |
+| **ZhiPu** | glm-4-flash | Chinese LLM |
+| **Qwen** | qwen-turbo | Alibaba Cloud |
+| **OpenAI** | gpt-4o-mini | International standard |
+| **Ollama** | local model | Offline available |
 
 ### Advanced Features
 
 - 🔀 **Conflict Detection** — Auto-detect data conflicts between layers
 - 🧹 **ROT Cleanup** — Clean Redundant, Obsolete, Trivial memories
 - 📊 **Fallback Strategy** — Auto-fallback to local storage when MCP unavailable
+- 🔧 **Progressive Config** — Append to existing files instead of overwriting
 
 ---
 
@@ -429,12 +458,26 @@ npx openmemory-plus install -y
 # Specify IDE
 npx openmemory-plus install --ide augment
 
+# Specify LLM Provider (for memory classification)
+npx openmemory-plus install --llm deepseek
+
 # Config only, skip dependency check
 npx openmemory-plus install --skip-deps
 
 # Show MCP config
 npx openmemory-plus install --show-mcp
 ```
+
+### Supported LLM Providers
+
+| Provider | Command | Environment Variable |
+|----------|---------|---------------------|
+| DeepSeek | `--llm deepseek` | `DEEPSEEK_API_KEY` |
+| MiniMax | `--llm minimax` | `MINIMAX_API_KEY` |
+| ZhiPu | `--llm zhipu` | `ZHIPU_API_KEY` |
+| Qwen | `--llm qwen` | `DASHSCOPE_API_KEY` |
+| OpenAI | `--llm openai` | `OPENAI_API_KEY` |
+| Ollama | `--llm ollama` | (local, no API Key) |
 
 ### 🐳 Dependency Service Management (Docker Compose)
 
@@ -510,17 +553,23 @@ openmemory-plus/
 # After installation in your project (Augment example):
 your-project/
 ├── _omp/                      # OpenMemory Plus core directory (shared by all IDEs)
+│   ├── AGENTS.md              # Complete Agent rules file
 │   ├── memory/                # Project-level memory storage
-│   │   ├── project.yaml       # Project config (SSOT)
-│   │   ├── activeContext.md   # Active context
-│   │   └── ...                # Other context files
+│   │   ├── projectbrief.md    # Project overview
+│   │   ├── productContext.md  # Product requirements
+│   │   ├── techContext.md     # Tech stack
+│   │   ├── activeContext.md   # Current session context
+│   │   ├── systemPatterns.md  # Patterns & conventions
+│   │   ├── decisions.yaml     # Architecture decisions log
+│   │   └── progress.md        # Task progress
 │   ├── commands/              # Agent commands
 │   │   └── memory.md          # Main command entry
 │   ├── workflows/             # Workflows
-│   │   └── memory/            # Memory management workflow
+│   │   └── memory/            # Memory management workflow (7 steps)
 │   └── skills/                # Agent Skills
-│       └── memory-extraction/ # Memory extraction Skill
+│       └── memory-extraction/ # Memory extraction Skill (auto-trigger)
 │
+├── AGENTS.md                  # Entry file (references _omp/AGENTS.md)
 └── .augment/                  # IDE-specific directory
     ├── commands/              # Command entries (linked to _omp)
     └── skills/                # Skills (linked to _omp)
@@ -612,12 +661,16 @@ The wizard will:
 
 ## 🗺️ Roadmap
 
-### v1.x (Current)
+### v1.5 (Current)
 - [x] Dual-layer memory architecture
 - [x] Smart classification routing
 - [x] Multi-IDE support (Augment, Claude, Cursor, Gemini)
 - [x] CLI install tool
 - [x] Sensitive info filtering
+- [x] Multi-LLM Provider support (DeepSeek, MiniMax, ZhiPu, Qwen, OpenAI, Ollama)
+- [x] Docker Compose one-click deploy
+- [x] Progressive config (append to existing files)
+- [x] MCP auto-configuration and verification
 
 ### v2.0 (Planned)
 - [ ] Web UI management interface

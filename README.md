@@ -41,6 +41,21 @@
 
 > **让任何 AI Agent 在 5 分钟内获得持久记忆能力。**
 
+### 📸 效果展示
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="images/auto_memory_execute.png" alt="自动记忆提取执行" width="100%"><br>
+      <sub><b>自动记忆提取执行</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="images/auto_memory_result.png" alt="记忆提取结果" width="100%"><br>
+      <sub><b>记忆提取结果</b></sub>
+    </td>
+  </tr>
+</table>
+
 ---
 
 ## 💡 为什么需要 OpenMemory Plus？
@@ -346,10 +361,23 @@ omp deps down      # 停止服务
 - 🔄 **双层记忆架构** — 项目级 + 用户级分离存储，各司其职
 - 🎯 **智能分类** — 自动判断信息应存储在项目还是用户记忆
 - 🔍 **语义搜索** — 基于 BGE-M3 的多语言向量检索
-- ⚡ **自动提取** — 对话结束时自动保存有价值信息
+- ⚡ **事件驱动提取** — 对话结束时自动触发记忆提取 Skill
 - 🔐 **敏感信息过滤** — 自动识别并阻止存储 API Key、密码等
 
-### 🧠 智能记忆管理 <sup>NEW</sup>
+### 🤖 多 LLM 支持 <sup>NEW</sup>
+
+支持多种 LLM Provider 进行记忆分类：
+
+| Provider | 模型 | 特点 |
+|----------|------|------|
+| **DeepSeek** | deepseek-chat | 🔥 推荐，性价比高 |
+| **MiniMax** | abab6.5s-chat | 中文优化 |
+| **ZhiPu** | glm-4-flash | 国产大模型 |
+| **Qwen** | qwen-turbo | 阿里云 |
+| **OpenAI** | gpt-4o-mini | 国际标准 |
+| **Ollama** | 本地模型 | 离线可用 |
+
+### 🧠 智能记忆管理
 
 - 📊 **多维度分类** — 三维度分类体系 (Scope/Confidence/Temporality)，精准路由每条记忆
 - 🧹 **ROT 智能过滤** — 自动识别冗余、过时、琐碎信息，保持记忆库精简
@@ -364,6 +392,7 @@ omp deps down      # 停止服务
 - 📊 **降级策略** — MCP 不可用时自动降级到本地存储
 - 🔗 **记忆整合** — 语义聚类合并碎片化记忆
 - 📉 **质量指标** — 可视化面板展示记忆健康状态
+- 🔧 **渐进式配置** — 已有配置文件时追加而非覆盖
 
 ---
 
@@ -457,12 +486,26 @@ npx openmemory-plus install -y
 # 指定 IDE
 npx openmemory-plus install --ide augment
 
+# 指定 LLM Provider (用于记忆分类)
+npx openmemory-plus install --llm deepseek
+
 # 仅配置项目，跳过依赖检测
 npx openmemory-plus install --skip-deps
 
 # 显示 MCP 配置
 npx openmemory-plus install --show-mcp
 ```
+
+### 支持的 LLM Provider
+
+| Provider | 命令 | 环境变量 |
+|----------|------|----------|
+| DeepSeek | `--llm deepseek` | `DEEPSEEK_API_KEY` |
+| MiniMax | `--llm minimax` | `MINIMAX_API_KEY` |
+| ZhiPu | `--llm zhipu` | `ZHIPU_API_KEY` |
+| Qwen | `--llm qwen` | `DASHSCOPE_API_KEY` |
+| OpenAI | `--llm openai` | `OPENAI_API_KEY` |
+| Ollama | `--llm ollama` | (本地，无需 API Key) |
 
 ### 🐳 依赖服务管理 (Docker Compose)
 
@@ -538,17 +581,23 @@ openmemory-plus/
 # 安装后在你的项目中生成 (以 Augment 为例):
 your-project/
 ├── _omp/                      # OpenMemory Plus 核心目录 (所有 IDE 共享)
+│   ├── AGENTS.md              # 完整 Agent 规则文件
 │   ├── memory/                # 项目级记忆存储
-│   │   ├── project.yaml       # 项目配置 (SSOT)
-│   │   ├── activeContext.md   # 活动上下文
-│   │   └── ...                # 其他上下文文件
+│   │   ├── projectbrief.md    # 项目概述
+│   │   ├── productContext.md  # 产品需求
+│   │   ├── techContext.md     # 技术栈
+│   │   ├── activeContext.md   # 当前会话上下文
+│   │   ├── systemPatterns.md  # 模式与规范
+│   │   ├── decisions.yaml     # 架构决策日志
+│   │   └── progress.md        # 任务进度
 │   ├── commands/              # Agent 命令
 │   │   └── memory.md          # 主命令入口
 │   ├── workflows/             # 工作流
-│   │   └── memory/            # 记忆管理工作流
+│   │   └── memory/            # 记忆管理工作流 (7 步骤)
 │   └── skills/                # Agent Skills
-│       └── memory-extraction/ # 记忆提取 Skill
+│       └── memory-extraction/ # 记忆提取 Skill (自动触发)
 │
+├── AGENTS.md                  # 入口文件 (引用 _omp/AGENTS.md)
 └── .augment/                  # IDE 特定目录
     ├── commands/              # 命令入口 (链接到 _omp)
     └── skills/                # Skills (链接到 _omp)
@@ -721,12 +770,16 @@ npx openmemory-plus install
 
 ## 🗺️ Roadmap
 
-### v1.x (当前)
+### v1.5 (当前)
 - [x] 双层记忆架构
 - [x] 智能分类路由
 - [x] 多 IDE 支持 (Augment, Claude, Cursor, Gemini)
 - [x] CLI 安装工具
 - [x] 敏感信息过滤
+- [x] 多 LLM Provider 支持 (DeepSeek, MiniMax, ZhiPu, Qwen, OpenAI, Ollama)
+- [x] Docker Compose 一键部署
+- [x] 渐进式配置 (已有文件追加而非覆盖)
+- [x] MCP 自动配置与验证
 
 ### v2.0 (计划中)
 - [ ] Web UI 管理界面
