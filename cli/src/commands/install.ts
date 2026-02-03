@@ -22,6 +22,16 @@ import {
   getComposeFilePath,
   getComposeDir,
 } from './deps.js';
+import {
+  configureMcpForIde,
+  verifyMcpSetup,
+  runE2EMemoryTest,
+  displayVerificationResult,
+  displayE2ETestResult,
+  displayMcpConfigJson,
+  IDE_MCP_CONFIGS,
+  type McpConfigResult,
+} from '../lib/mcp-config.js';
 
 // ============================================================================
 // Types
@@ -34,6 +44,9 @@ interface InstallOptions {
   showMcp?: boolean;
   force?: boolean; // Fix Issue #11: Add force option
   compose?: boolean; // Use Docker Compose mode
+  configureMcp?: boolean; // Auto-configure MCP for IDEs
+  verify?: boolean; // Verify MCP setup after install
+  skipVerify?: boolean; // Skip verification
 }
 
 interface IdeConfig {
@@ -367,44 +380,6 @@ function processTemplate(content: string, projectName: string): string {
   return content
     .replace(/\{\{PROJECT_NAME\}\}/g, projectName)
     .replace(/\{\{CREATED_AT\}\}/g, now);
-}
-
-// Fix Issue #7: Improved MCP configuration guidance
-function showMcpConfig(ide: string): void {
-  console.log(chalk.bold('\n📋 MCP 配置 (复制到 IDE 配置文件):'));
-
-  // Fix Issue #7: Clarify that OPENAI_API_KEY is optional when using Ollama
-  console.log(chalk.gray('\n💡 使用本地 Ollama + BGE-M3，无需 OpenAI API Key\n'));
-
-  const mcpConfig = {
-    openmemory: {
-      command: 'npx',
-      args: ['-y', 'openmemory-mcp'],
-      env: {
-        // Fix Issue #7: Remove misleading OPENAI_API_KEY
-        MEM0_EMBEDDING_MODEL: 'bge-m3',
-        MEM0_EMBEDDING_PROVIDER: 'ollama',
-        OLLAMA_HOST: 'http://localhost:11434',
-        QDRANT_HOST: 'localhost',
-        QDRANT_PORT: '6333',
-      },
-    },
-  };
-
-  console.log(chalk.cyan('\n```json'));
-  console.log(JSON.stringify(mcpConfig, null, 2));
-  console.log(chalk.cyan('```\n'));
-
-  const configPaths: Record<string, string> = {
-    augment: '~/.augment/settings.json (mcpServers 字段)',
-    claude: '~/.config/claude/mcp.json',
-    cursor: '~/.cursor/mcp.json',
-    gemini: '~/.config/gemini/mcp.json',
-    common: '参考各 IDE 的 MCP 配置文档',
-  };
-
-  console.log(chalk.gray(`配置文件位置: ${configPaths[ide] || configPaths.common}`));
-  console.log(chalk.gray('\n📖 详细配置说明: https://github.com/mem0ai/mem0/tree/main/openmemory\n'));
 }
 
 // ============================================================================
@@ -820,27 +795,96 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
 }
 
 // ============================================================================
-// Phase 3: Completion
+// Phase 3: MCP Configuration, Verification, and Completion
 // ============================================================================
 
-function phase3_showCompletion(ide: string, showMcp: boolean): void {
+async function phase3_configureMcp(ide: string, options: InstallOptions): Promise<boolean> {
+  console.log(chalk.bold.cyan('\n━━━ Phase 3: MCP 配置与验证 ━━━\n'));
+
+  // Step 1: Auto-configure MCP for the selected IDE
+  if (options.configureMcp !== false) {
+    const spinner = ora(`配置 ${IDE_MCP_CONFIGS[ide]?.name || ide} MCP...`).start();
+
+    const result = configureMcpForIde(ide, options.force);
+
+    if (result.success) {
+      if (result.created) {
+        spinner.succeed(`MCP 配置已创建: ${result.path}`);
+      } else if (result.updated) {
+        spinner.succeed(`MCP 配置已更新: ${result.path}`);
+      } else {
+        spinner.succeed(`MCP 已配置 (无需更改): ${result.path}`);
+      }
+    } else {
+      spinner.fail(`MCP 配置失败: ${result.error}`);
+      console.log(chalk.yellow('\n手动配置方法:'));
+      displayMcpConfigJson();
+      return false;
+    }
+  }
+
+  // Step 2: Verify MCP setup (unless skipped)
+  if (!options.skipVerify) {
+    const spinner = ora('验证 MCP 设置...').start();
+
+    const verifyResult = await verifyMcpSetup();
+
+    if (verifyResult.success) {
+      spinner.succeed('MCP 验证通过');
+    } else {
+      spinner.warn('MCP 验证未完全通过');
+      displayVerificationResult(verifyResult);
+
+      // Show troubleshooting tips
+      if (verifyResult.details) {
+        const { qdrantConnected, ollamaConnected } = verifyResult.details;
+        if (!qdrantConnected) {
+          console.log(chalk.yellow('  💡 Qdrant 未连接，请确保 Docker 已启动并运行:'));
+          console.log(chalk.gray('     docker compose up -d'));
+        }
+        if (!ollamaConnected) {
+          console.log(chalk.yellow('  💡 Ollama 未连接或缺少 embedding 模型:'));
+          console.log(chalk.gray('     ollama pull bge-m3'));
+        }
+      }
+      return false;
+    }
+
+    // Step 3: Run E2E test
+    const e2eSpinner = ora('运行端到端测试...').start();
+    const e2eResult = await runE2EMemoryTest();
+
+    if (e2eResult.success) {
+      e2eSpinner.succeed('端到端测试通过');
+    } else {
+      e2eSpinner.warn('端到端测试未通过');
+      displayE2ETestResult(e2eResult);
+    }
+  }
+
+  return true;
+}
+
+function phase3_showCompletion(ide: string, mcpConfigured: boolean): void {
   console.log(chalk.bold.cyan('\n━━━ 安装完成 ━━━\n'));
-  
+
   console.log(chalk.green.bold('🎉 OpenMemory Plus 已成功安装!\n'));
-  
+
+  if (mcpConfigured) {
+    console.log(chalk.green('✓ MCP 已自动配置到 ' + (IDE_MCP_CONFIGS[ide]?.name || ide)));
+    console.log('');
+  }
+
   console.log(chalk.bold('💡 下一步:'));
-  console.log(chalk.gray('  1. 在 IDE 中打开项目'));
+  console.log(chalk.gray('  1. 重启 IDE 以加载 MCP 配置'));
   console.log(chalk.gray('  2. 使用 ') + chalk.cyan('/memory') + chalk.gray(' 打开记忆管理菜单'));
   console.log(chalk.gray('  3. 选择操作或用自然语言描述需求'));
   console.log('');
-  
-  if (showMcp) {
-    showMcpConfig(ide);
-  } else {
+
+  if (!mcpConfigured) {
     console.log(chalk.gray('📋 查看 MCP 配置: ') + chalk.cyan('npx openmemory-plus install --show-mcp'));
+    console.log('');
   }
-  
-  console.log('');
 }
 
 // ============================================================================
@@ -850,20 +894,22 @@ function phase3_showCompletion(ide: string, showMcp: boolean): void {
 export async function installCommand(options: InstallOptions): Promise<void> {
   // Show banner
   console.log(chalk.cyan(BANNER));
-  
+
   // If only showing MCP config
   if (options.showMcp) {
-    const ide = options.ide || 'augment';
-    showMcpConfig(ide);
+    displayMcpConfigJson();
     return;
   }
-  
+
   // Phase 1: Check and install dependencies
   await phase1_checkAndInstallDeps(options);
-  
+
   // Phase 2: Initialize project
   const ide = await phase2_initProject(options);
-  
-  // Phase 3: Show completion
-  phase3_showCompletion(ide, false);
+
+  // Phase 3: Configure MCP, verify, and test
+  const mcpSuccess = await phase3_configureMcp(ide, options);
+
+  // Show completion
+  phase3_showCompletion(ide, mcpSuccess);
 }
