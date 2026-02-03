@@ -50,22 +50,23 @@ _omp/                           # OpenMemory Plus 核心目录
 
 ## 分类规则
 
-### 存储位置决策表
+> 📖 **详细规则**: 参见 `references/classification-rules.md`
 
-| 信息类型 | 存储位置 | 识别关键词 |
-|----------|----------|------------|
-| 项目配置 | `_omp/memory/project.yaml` | url, domain, deploy, vercel, config, path |
-| 技术决策 | `_omp/memory/decisions.yaml` | 决定, 选择, 采用, 架构, decision, choose |
-| 变更记录 | `_omp/memory/changelog.yaml` | 更新, 修改, 发布, update, change, release |
-| 用户偏好 | `openmemory` | 偏好, 喜欢, 习惯, prefer, style, always |
-| 用户技能 | `openmemory` | 会, 熟悉, 经验, skill, experience, know |
-| 对话上下文 | `openmemory` | 之前, 上次, 记得, remember, last time |
+### 快速分类指南
 
-### 分类优先级
+| 信号 | Scope | Confidence | 存储位置 |
+|------|-------|------------|----------|
+| "我喜欢/偏好/习惯" | PERSONAL | EXPLICIT | openmemory |
+| "项目使用/配置为" | PROJECT | EXPLICIT | _omp/memory/ |
+| "决定/选择/采用" | PROJECT | EXPLICIT | decisions.yaml |
+| 用户反复使用某模式 | PERSONAL | INFERRED | openmemory |
+| "试试/也许/可能" | EPHEMERAL | UNCERTAIN | 不存储 |
 
-1. **项目相关** → `_omp/memory/` (Git 版本控制)
-2. **用户相关** → `openmemory` (跨项目共享)
-3. **混合信息** → 拆分存储到两个系统
+### 置信度阈值
+
+- **存储阈值**: confidence >= 0.4
+- **自动存储**: confidence >= 0.7
+- **需确认**: 0.4 <= confidence < 0.7
 
 ### 敏感信息过滤
 

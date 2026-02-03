@@ -1,0 +1,48 @@
+# Memory Classification Rules
+
+## 多维度分类体系
+
+### Dimension 1: Scope (范围)
+
+| Scope | 定义 | 存储位置 | 示例 |
+|-------|------|----------|------|
+| PERSONAL | 与用户个人相关 | openmemory | "我喜欢用 Vim" |
+| PROJECT | 与当前项目相关 | _omp/memory/ | "项目使用 React" |
+| UNIVERSAL | 跨项目通用知识 | openmemory | "TypeScript 比 JS 更安全" |
+| EPHEMERAL | 仅当前会话有效 | 不存储 | "先试试这个方案" |
+
+### Dimension 2: Confidence (置信度)
+
+| Level | 定义 | 处理方式 |
+|------|------|----------|
+| EXPLICIT (1.0) | 用户明确陈述 | 直接存储 |
+| INFERRED (0.7) | 从行为推断 | 存储但标记 |
+| UNCERTAIN (0.4) | 需要确认 | 询问用户 |
+| NOISE (<0.3) | 噪音信息 | 丢弃 |
+
+### Dimension 3: Temporality (时效性)
+
+| Type | TTL | 示例 |
+|------|-----|------|
+| PERMANENT | 无限 | 用户偏好、项目架构 |
+| CONTEXTUAL | 30d | 当前迭代目标 |
+| EPHEMERAL | 会话 | 临时讨论 |
+
+## 分类决策树
+
+```
+信息输入
+    ↓
+是否敏感信息? → YES → 丢弃
+    ↓ NO
+是否 ROT? → YES → 丢弃
+    ↓ NO
+置信度 < 0.3? → YES → 丢弃
+    ↓ NO
+Scope = EPHEMERAL? → YES → 不存储
+    ↓ NO
+Scope = PERSONAL/UNIVERSAL? → YES → openmemory
+    ↓ NO
+Scope = PROJECT → _omp/memory/
+```
+
