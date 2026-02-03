@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { existsSync, mkdirSync, rmSync, readFileSync } from 'fs';
+import { existsSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
 
@@ -216,10 +216,16 @@ describe('install command', () => {
 
       expect(existsSync(join(TEST_DIR, 'AGENTS.md'))).toBe(true);
 
+      // Root AGENTS.md should be a short reference file
       const content = readFileSync(join(TEST_DIR, 'AGENTS.md'), 'utf-8');
       expect(content).toContain('OpenMemory Plus');
-      expect(content).toContain('Memory System');
-      expect(content).toContain('Session Lifecycle');
+      expect(content).toContain('_omp/AGENTS.md'); // Reference to full instructions
+
+      // Full instructions should be in _omp/AGENTS.md
+      expect(existsSync(join(TEST_DIR, '_omp', 'AGENTS.md'))).toBe(true);
+      const ompContent = readFileSync(join(TEST_DIR, '_omp', 'AGENTS.md'), 'utf-8');
+      expect(ompContent).toContain('Memory Architecture');
+      expect(ompContent).toContain('Core Commands');
     });
 
     it('should create CLAUDE.md for claude IDE', () => {
@@ -232,7 +238,7 @@ describe('install command', () => {
 
       const content = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8');
       expect(content).toContain('OpenMemory Plus');
-      expect(content).toContain('Memory System');
+      expect(content).toContain('_omp/AGENTS.md'); // MANDATORY reference
     });
 
     it('should create .cursor/rules/openmemory.mdc for cursor IDE', () => {
@@ -245,7 +251,7 @@ describe('install command', () => {
 
       const content = readFileSync(join(TEST_DIR, '.cursor', 'rules', 'openmemory.mdc'), 'utf-8');
       expect(content).toContain('OpenMemory Plus');
-      expect(content).toContain('_omp/memory');
+      expect(content).toContain('_omp/AGENTS.md'); // MANDATORY reference
     });
 
     it('should create both AGENTS.md and CLAUDE.md for multi-IDE install', () => {
@@ -256,6 +262,61 @@ describe('install command', () => {
 
       expect(existsSync(join(TEST_DIR, 'AGENTS.md'))).toBe(true);
       expect(existsSync(join(TEST_DIR, 'CLAUDE.md'))).toBe(true);
+    });
+
+    it('should append OMP reference to existing CLAUDE.md', () => {
+      // Create existing CLAUDE.md without OMP reference
+      const existingContent = '# My Project\n\nExisting Claude instructions.\n';
+      writeFileSync(join(TEST_DIR, 'CLAUDE.md'), existingContent);
+
+      execSync(`node ${CLI_PATH} install -i claude -y --skip-deps`, {
+        cwd: TEST_DIR,
+        stdio: 'pipe',
+      });
+
+      const content = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8');
+      // Should contain original content
+      expect(content).toContain('My Project');
+      expect(content).toContain('Existing Claude instructions');
+      // Should also contain OMP reference
+      expect(content).toContain('_omp/AGENTS.md');
+      expect(content).toContain('MANDATORY');
+    });
+
+    it('should append OMP reference to existing cursor .mdc', () => {
+      // Create existing cursor rule without OMP reference
+      const cursorDir = join(TEST_DIR, '.cursor', 'rules');
+      mkdirSync(cursorDir, { recursive: true });
+      const existingContent = '---\ndescription: My rules\n---\n\n# Custom Rules\n';
+      writeFileSync(join(cursorDir, 'openmemory.mdc'), existingContent);
+
+      execSync(`node ${CLI_PATH} install -i cursor -y --skip-deps`, {
+        cwd: TEST_DIR,
+        stdio: 'pipe',
+      });
+
+      const content = readFileSync(join(cursorDir, 'openmemory.mdc'), 'utf-8');
+      // Should contain original content
+      expect(content).toContain('My rules');
+      expect(content).toContain('Custom Rules');
+      // Should also contain OMP reference
+      expect(content).toContain('_omp/AGENTS.md');
+      expect(content).toContain('MANDATORY');
+    });
+
+    it('should skip append if OMP reference already exists', () => {
+      // Create CLAUDE.md with OMP reference already present
+      const existingContent = '# My Project\n\n<!-- OpenMemory Plus Integration -->\n\nAlready has OMP.\n';
+      writeFileSync(join(TEST_DIR, 'CLAUDE.md'), existingContent);
+
+      execSync(`node ${CLI_PATH} install -i claude -y --skip-deps`, {
+        cwd: TEST_DIR,
+        stdio: 'pipe',
+      });
+
+      const content = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8');
+      // Should be unchanged (no duplicate append)
+      expect(content).toBe(existingContent);
     });
 
     it('should include decisions.yaml in memory directory', () => {
