@@ -28,7 +28,7 @@ description: 显示记忆系统的质量指标和健康度
 
 ### Quality Score
 
-> 📖 **公式详情**: 参见 `skills/memory-extraction/references/health-score.md`
+> 📖 **公式详情**: 参见 `_omp/skills/memory-extraction/references/health-score.md`
 
 健康度计算使用标准公式，综合以下四个指标：
 - **活跃率** (30% 权重): Active 状态记忆占比

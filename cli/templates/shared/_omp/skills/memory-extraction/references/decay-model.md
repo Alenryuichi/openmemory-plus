@@ -35,6 +35,8 @@ S = base_strength + (access_count * 10) + (explicit_mark * 50)
 | 频繁访问 (>5次) | +0.1 |
 | 项目核心配置 | +0.3 |
 
+> ⚠️ **Cap 限制**: `importance_boost = min(累加值, 0.5)`，最终值不超过 0.5
+
 ## 衰减状态分类
 
 | Status | Retention | 建议操作 |

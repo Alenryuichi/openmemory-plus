@@ -29,7 +29,7 @@ Call `list_memories_openmemory`:
 
 ### 3. Calculate Health Score
 
-> 📖 **公式详情**: 参见 `skills/memory-extraction/references/health-score.md`
+> 📖 **公式详情**: 参见 `_omp/skills/memory-extraction/references/health-score.md`
 
 Calculate the overall health score using the standard formula:
 - **活跃率** (30%): Active 状态记忆占比

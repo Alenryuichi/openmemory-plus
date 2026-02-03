@@ -7,7 +7,7 @@ description: 使用 Ebbinghaus 衰减模型分析记忆的时间衰减状态
 
 ## 参考文档
 
-详见: `skills/memory-extraction/references/decay-model.md`
+详见: `_omp/skills/memory-extraction/references/decay-model.md`
 
 ## EXECUTION RULES
 
@@ -52,7 +52,8 @@ if confidence > 0.9: importance_boost += 0.2
 if access_count > 5: importance_boost += 0.1
 if is_core_config: importance_boost += 0.3
 
-Cap at 0.5 maximum
+# Apply cap to ensure boost never exceeds 0.5
+importance_boost = min(importance_boost, 0.5)
 ```
 
 ### 4. Calculate Retention Score

@@ -42,7 +42,7 @@
     ↓ NO
 是否 ROT? → YES → 丢弃
     ↓ NO
-置信度 < 0.3? → YES → 丢弃
+置信度 < 0.4? → YES → 丢弃 (NOISE)
     ↓ NO
 Scope = EPHEMERAL? → YES → 不存储
     ↓ NO
