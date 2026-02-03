@@ -1,0 +1,37 @@
+# OpenMemory Plus - E2E Test Container
+# 轻量级测试容器，连接到外部服务
+
+FROM node:20-slim
+
+# 安装必要工具
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+# 设置工作目录
+WORKDIR /workspace
+
+# 复制 CLI 构建产物
+COPY cli/dist /workspace/openmemory-plus/cli/dist
+COPY cli/templates /workspace/openmemory-plus/cli/templates
+COPY cli/package.json /workspace/openmemory-plus/cli/package.json
+COPY cli/node_modules /workspace/openmemory-plus/cli/node_modules
+
+# 创建测试项目目录
+WORKDIR /workspace/test-project
+RUN git init && \
+    git config user.email "test@e2e.local" && \
+    git config user.name "E2E Test"
+
+# 复制测试脚本
+COPY cli/tests/e2e/e2e-full-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# 设置环境变量
+ENV NODE_ENV=test
+ENV CI=true
+
+ENTRYPOINT ["/entrypoint.sh"]
+

@@ -1,0 +1,36 @@
+# OpenMemory Plus E2E Test Sandbox
+# 完全隔离的测试环境，支持 Docker-in-Docker
+# 使用预构建的 dist 目录和本地 node_modules 避免网络问题
+
+FROM docker:24-dind
+
+# 安装 Node.js 和必要工具
+RUN apk add --no-cache \
+    nodejs \
+    npm \
+    curl \
+    bash \
+    git
+
+# 设置工作目录
+WORKDIR /workspace
+
+# 复制完整的 CLI 目录（包括 node_modules）
+COPY cli/dist /workspace/openmemory-plus/cli/dist
+COPY cli/templates /workspace/openmemory-plus/cli/templates
+COPY cli/package.json /workspace/openmemory-plus/cli/package.json
+COPY cli/node_modules /workspace/openmemory-plus/cli/node_modules
+
+# 创建测试项目目录
+WORKDIR /workspace/test-project
+RUN git init && git config user.email "test@test.com" && git config user.name "Test"
+
+# 设置环境变量
+ENV DOCKER_HOST=unix:///var/run/docker.sock
+
+# 入口脚本
+COPY cli/tests/e2e/sandbox-entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+
