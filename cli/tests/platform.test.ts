@@ -110,8 +110,10 @@ describe('platform utilities', () => {
     });
 
     it('should timeout when command takes too long', async () => {
+      // Use a read from stdin that blocks indefinitely instead of sleep
+      // This is more reliable across different CI environments
       await expect(
-        safeExec('sleep', ['10'], { timeout: 100 })
+        safeExec('cat', [], { timeout: 100 })
       ).rejects.toThrow(/timed out/);
     });
 
