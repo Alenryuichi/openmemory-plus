@@ -70,6 +70,7 @@ This uses **micro-file architecture** with **menu-driven routing**:
 [5] 🔄 同步检查    检测冲突并解决
 [6] ⏰ 衰减分析    查看记忆衰减状态
 [7] 🔗 知识图谱    查看实体关系
+[8] 📦 记忆整合    合并碎片化记忆
 
 [M] 返回菜单  [X] 退出
 
@@ -95,6 +96,7 @@ Based on user input, load the corresponding step file:
 | `5` | 同步, 冲突, sync, conflict | `./steps/sync.md` |
 | `6` | 衰减, 老化, decay, aging | `./steps/decay.md` |
 | `7` | 图谱, 关系, graph, relation | `./steps/graph.md` |
+| `8` | 整合, 合并, consolidate, merge | `./steps/consolidate.md` |
 | `M` | 菜单, menu | Re-display menu |
 | `X` | 退出, exit, quit | Exit workflow |
 
