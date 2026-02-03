@@ -1,0 +1,36 @@
+---
+description: OpenMemory Plus - Agent Memory System
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# {{PROJECT_NAME}} - Memory System
+
+This project uses **OpenMemory Plus** for persistent agent memory.
+
+## Quick Start
+
+```
+/memory
+```
+
+## Memory Files (`_omp/memory/`)
+
+- `activeContext.md` - Current session context
+- `productContext.md` - Product requirements  
+- `progress.md` - Development progress
+- `systemPatterns.md` - Architecture patterns
+- `techContext.md` - Technical decisions
+
+## Workflow
+
+1. Load context: `@_omp/memory/activeContext.md`
+2. Work on tasks with memory awareness
+3. Save learnings with `/memory save`
+
+## Commands & Skills
+
+- Commands: `.cursor/commands/`
+- Skills: `.cursor/skills/`
+- Core: `_omp/`
+

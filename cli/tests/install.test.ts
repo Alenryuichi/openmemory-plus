@@ -181,5 +181,95 @@ describe('install command', () => {
       expect(existsSync(join(TEST_DIR, '_omp', 'patches', 'categorization.py'))).toBe(true);
     });
   });
+
+  // Issue #6 Fix: Add tests for entry file generation
+  describe('entry file generation', () => {
+    it('should create AGENTS.md for augment IDE', () => {
+      execSync(`node ${CLI_PATH} install -i augment -y --skip-deps`, {
+        cwd: TEST_DIR,
+        stdio: 'pipe',
+      });
+
+      expect(existsSync(join(TEST_DIR, 'AGENTS.md'))).toBe(true);
+
+      const content = readFileSync(join(TEST_DIR, 'AGENTS.md'), 'utf-8');
+      expect(content).toContain('OpenMemory Plus');
+      expect(content).toContain('Memory System');
+      expect(content).toContain('Session Lifecycle');
+    });
+
+    it('should create CLAUDE.md for claude IDE', () => {
+      execSync(`node ${CLI_PATH} install -i claude -y --skip-deps`, {
+        cwd: TEST_DIR,
+        stdio: 'pipe',
+      });
+
+      expect(existsSync(join(TEST_DIR, 'CLAUDE.md'))).toBe(true);
+
+      const content = readFileSync(join(TEST_DIR, 'CLAUDE.md'), 'utf-8');
+      expect(content).toContain('OpenMemory Plus');
+      expect(content).toContain('Memory System');
+    });
+
+    it('should create .cursor/rules/openmemory.mdc for cursor IDE', () => {
+      execSync(`node ${CLI_PATH} install -i cursor -y --skip-deps`, {
+        cwd: TEST_DIR,
+        stdio: 'pipe',
+      });
+
+      expect(existsSync(join(TEST_DIR, '.cursor', 'rules', 'openmemory.mdc'))).toBe(true);
+
+      const content = readFileSync(join(TEST_DIR, '.cursor', 'rules', 'openmemory.mdc'), 'utf-8');
+      expect(content).toContain('OpenMemory Plus');
+      expect(content).toContain('_omp/memory');
+    });
+
+    it('should create both AGENTS.md and CLAUDE.md for multi-IDE install', () => {
+      execSync(`node ${CLI_PATH} install -i augment,claude -y --skip-deps`, {
+        cwd: TEST_DIR,
+        stdio: 'pipe',
+      });
+
+      expect(existsSync(join(TEST_DIR, 'AGENTS.md'))).toBe(true);
+      expect(existsSync(join(TEST_DIR, 'CLAUDE.md'))).toBe(true);
+    });
+
+    it('should include decisions.yaml in memory directory', () => {
+      execSync(`node ${CLI_PATH} install -i augment -y --skip-deps`, {
+        cwd: TEST_DIR,
+        stdio: 'pipe',
+      });
+
+      expect(existsSync(join(TEST_DIR, '_omp', 'memory', 'decisions.yaml'))).toBe(true);
+
+      const content = readFileSync(join(TEST_DIR, '_omp', 'memory', 'decisions.yaml'), 'utf-8');
+      expect(content).toContain('Technical Decisions Log');
+      expect(content).toContain('decisions:');
+    });
+
+    it('should include memory-extraction skill files', () => {
+      execSync(`node ${CLI_PATH} install -i augment -y --skip-deps`, {
+        cwd: TEST_DIR,
+        stdio: 'pipe',
+      });
+
+      // Check subagent-prompt.md
+      expect(existsSync(join(TEST_DIR, '_omp', 'skills', 'memory-extraction', 'subagent-prompt.md'))).toBe(true);
+      const subagentContent = readFileSync(
+        join(TEST_DIR, '_omp', 'skills', 'memory-extraction', 'subagent-prompt.md'),
+        'utf-8'
+      );
+      expect(subagentContent).toContain('Memory Extraction Subagent');
+      expect(subagentContent).toContain('this project'); // Not {{PROJECT_NAME}}
+
+      // Check triggers.md
+      expect(existsSync(join(TEST_DIR, '_omp', 'skills', 'memory-extraction', 'triggers.md'))).toBe(true);
+      const triggersContent = readFileSync(
+        join(TEST_DIR, '_omp', 'skills', 'memory-extraction', 'triggers.md'),
+        'utf-8'
+      );
+      expect(triggersContent).toContain('Trigger Priority Levels');
+    });
+  });
 });
 

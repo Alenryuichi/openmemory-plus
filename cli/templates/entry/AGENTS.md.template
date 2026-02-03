@@ -1,0 +1,118 @@
+# {{PROJECT_NAME}} - Agent Instructions
+
+This project uses **OpenMemory Plus** for persistent agent memory management.
+
+---
+
+## 🧠 Memory System (Auto-Enabled)
+
+> **Core Principle**: Agent automatically extracts memories without user intervention
+
+### Session Lifecycle
+
+#### 🚀 Session Start (Auto)
+
+1. **Load project context**
+   ```
+   Read _omp/memory/project.yaml
+   Read _omp/memory/activeContext.md
+   ```
+
+2. **Load user preferences** (if openmemory MCP available)
+   ```
+   search_memory_openmemory: "user preferences for {{PROJECT_NAME}}"
+   ```
+
+3. **Restore work state**
+   ```
+   Read _omp/memory/progress.md
+   ```
+
+#### ⚡ During Session - Auto-Extraction
+
+**When detecting trigger events, automatically dispatch memory-extraction subagent:**
+
+| Priority | Trigger | Detection Signal | Storage |
+|----------|---------|------------------|---------|
+| P0 | Task complete | Task marked complete | `progress.md` |
+| P0 | Tech decision | "decide/choose/use" or "决定/选择/采用" | `decisions.yaml` |
+| P1 | Config change | .env, config file modified | `project.yaml` |
+| P1 | Deployment | deploy/vercel/wrangler output | `project.yaml` |
+| P2 | User preference | "I prefer/like" or "我喜欢/偏好" | `openmemory` |
+| P2 | Architecture | "pattern/architecture/design" | `systemPatterns.md` |
+| P3 | Checkpoint | Every 10 exchanges | `activeContext.md` |
+
+**Subagent dispatch template**:
+```
+Use sub-agent-explore or Task tool:
+  name: memory-extract-{timestamp}
+  instruction: See _omp/skills/memory-extraction/subagent-prompt.md
+```
+
+#### 🏁 Session End (Auto)
+
+Dispatch final memory-extraction subagent:
+- Session summary → `activeContext.md`
+- Unextracted learnings → appropriate memory files
+- Progress updates → `progress.md`
+
+---
+
+## 📁 Project Structure
+
+```
+_omp/                          # OpenMemory Plus core
+├── commands/                  # Agent commands
+│   └── memory.md              # /memory entry point
+├── workflows/                 # Multi-step workflows
+│   └── memory/                # Memory management workflow
+├── skills/                    # Agent skills
+│   └── memory-extraction/     # Auto-extract learnings
+│       ├── SKILL.md           # Skill definition
+│       ├── subagent-prompt.md # Subagent dispatch template
+│       └── triggers.md        # Trigger definitions
+└── memory/                    # Project memory files
+    ├── project.yaml           # Project config (SSOT)
+    ├── activeContext.md       # Current session context
+    ├── productContext.md      # Product/feature context
+    ├── progress.md            # Development progress
+    ├── projectbrief.md        # Project overview
+    ├── systemPatterns.md      # Architecture patterns
+    ├── techContext.md         # Technical decisions
+    └── decisions.yaml         # Decision records
+```
+
+---
+
+## 🎯 Manual Commands
+
+Use `/memory` for manual memory operations:
+
+| Command | Description |
+|---------|-------------|
+| `/memory` | Open memory management menu |
+| `/memory save` | Force save current context |
+| `/memory load` | Load specific memory file |
+| `/memory search <query>` | Search through memories |
+| `/memory sync` | Sync with external memory (Qdrant) |
+
+---
+
+## ⚙️ Integration
+
+This project is configured for: {{IDE_LIST}}
+
+### Dual-Layer Memory Architecture
+
+| Layer | Storage | Purpose |
+|-------|---------|---------|
+| Project | `_omp/memory/` | Project config, decisions, progress |
+| User | `openmemory` MCP | User preferences, cross-project context |
+
+### MCP Configuration
+
+For MCP setup, see your IDE-specific settings file or run:
+```bash
+npx openmemory-plus install --show-mcp
+```
+

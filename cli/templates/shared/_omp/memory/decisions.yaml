@@ -1,0 +1,25 @@
+# Technical Decisions Log
+# Auto-populated by memory-extraction subagent
+# Format: YAML list of decision records
+#
+# Each decision should include:
+#   - id: Unique identifier (dec-YYYY-MM-DD-NNN)
+#   - date: When the decision was made
+#   - title: Brief description
+#   - context: Why this decision was needed
+#   - choice: What was chosen
+#   - alternatives: Other options considered
+#   - impact: Areas affected by this decision
+
+decisions: []
+
+# Example entry (uncomment and modify):
+# decisions:
+#   - id: dec-2026-02-03-001
+#     date: 2026-02-03
+#     title: "Package Manager Selection"
+#     context: "Need faster dependency installation"
+#     choice: "pnpm"
+#     alternatives: ["npm", "yarn"]
+#     impact: "All package commands use pnpm"
+

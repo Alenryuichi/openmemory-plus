@@ -94,6 +94,26 @@ const IDE_CONFIGS: Record<string, IdeConfig> = {
   common: { commandsDir: '.agents/commands', skillsDir: '.agents/skills' },
 };
 
+// Entry file templates configuration
+const ENTRY_TEMPLATES = {
+  AGENTS: {
+    template: 'AGENTS.md.template',
+    output: 'AGENTS.md',
+    displayName: 'AGENTS.md (通用入口文件)',
+  },
+  CLAUDE: {
+    template: 'CLAUDE.md.template',
+    output: 'CLAUDE.md',
+    displayName: 'CLAUDE.md (Claude Code 入口文件)',
+  },
+  CURSOR: {
+    template: 'cursor-rule.mdc.template',
+    outputDir: '.cursor/rules',
+    output: 'openmemory.mdc',
+    displayName: '.cursor/rules/openmemory.mdc (Cursor 规则文件)',
+  },
+} as const;
+
 const BANNER = `
 ╔═══════════════════════════════════════════════════════════════╗
 ║                                                               ║
@@ -389,11 +409,101 @@ agent:
 `;
 }
 
-function processTemplate(content: string, projectName: string): string {
+function processTemplate(content: string, projectName: string, ideList?: string[]): string {
   const now = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   return content
     .replace(/\{\{PROJECT_NAME\}\}/g, projectName)
-    .replace(/\{\{CREATED_AT\}\}/g, now);
+    .replace(/\{\{CREATED_AT\}\}/g, now)
+    .replace(/\{\{IDE_LIST\}\}/g, ideList?.join(', ') || 'common');
+}
+
+// ============================================================================
+// Entry File Generation
+// ============================================================================
+
+/**
+ * Generate entry files (AGENTS.md, CLAUDE.md, etc.) based on selected IDEs
+ * Entry files are what AI agents read at startup to understand the project
+ */
+function generateEntryFiles(
+  targetDir: string,
+  projectName: string,
+  selectedIdes: string[],
+  templatesDir: string,
+  force: boolean
+): void {
+  const entryTemplatesDir = join(templatesDir, 'entry');
+
+  // Check if entry templates exist
+  if (!existsSync(entryTemplatesDir)) {
+    console.log(chalk.yellow('  ⚠ 入口文件模板不存在，跳过生成'));
+    return;
+  }
+
+  // Helper function to safely generate entry file
+  const generateFile = (
+    templatePath: string,
+    targetPath: string,
+    displayName: string,
+    createDir?: string
+  ): void => {
+    try {
+      if (!existsSync(templatePath)) {
+        return;
+      }
+
+      if (!existsSync(targetPath) || force) {
+        if (createDir) {
+          mkdirSync(createDir, { recursive: true });
+        }
+        const template = readFileSync(templatePath, 'utf-8');
+        const content = processTemplate(template, projectName, selectedIdes);
+        writeFileSync(targetPath, content);
+        console.log(chalk.green(`  ✓ 创建 ${displayName}`));
+      } else {
+        console.log(chalk.gray(`  ○ ${displayName} 已存在 (使用 --force 覆盖)`));
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log(chalk.red(`  ✗ 创建 ${displayName} 失败: ${errorMessage}`));
+    }
+  };
+
+  // Always generate AGENTS.md (universal entry file)
+  generateFile(
+    join(entryTemplatesDir, ENTRY_TEMPLATES.AGENTS.template),
+    join(targetDir, ENTRY_TEMPLATES.AGENTS.output),
+    ENTRY_TEMPLATES.AGENTS.displayName
+  );
+
+  // Generate IDE-specific entry files
+  for (const ide of selectedIdes) {
+    switch (ide) {
+      case 'claude':
+      case 'claude-desktop':
+        generateFile(
+          join(entryTemplatesDir, ENTRY_TEMPLATES.CLAUDE.template),
+          join(targetDir, ENTRY_TEMPLATES.CLAUDE.output),
+          ENTRY_TEMPLATES.CLAUDE.displayName
+        );
+        break;
+
+      case 'cursor': {
+        const cursorRulesDir = join(targetDir, ENTRY_TEMPLATES.CURSOR.outputDir);
+        generateFile(
+          join(entryTemplatesDir, ENTRY_TEMPLATES.CURSOR.template),
+          join(cursorRulesDir, ENTRY_TEMPLATES.CURSOR.output),
+          ENTRY_TEMPLATES.CURSOR.displayName,
+          cursorRulesDir
+        );
+        break;
+      }
+
+      // augment, gemini, common use AGENTS.md only (already generated above)
+      default:
+        break;
+    }
+  }
 }
 
 // ============================================================================
@@ -953,6 +1063,10 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
 
     console.log(chalk.green(`  ✓ 配置 ${ide} (${config.commandsDir}/)`));
   }
+
+  // Generate entry files (AGENTS.md, CLAUDE.md, etc.)
+  console.log(chalk.bold('\n📄 生成入口文件...\n'));
+  generateEntryFiles(cwd, projectName, selectedIdes, templatesDir, shouldForce);
 
   // Show summary for multi-select (Fix L2)
   if (selectedIdes.length > 1) {
