@@ -32,6 +32,12 @@ import {
   IDE_MCP_CONFIGS,
   type McpConfigResult,
 } from '../lib/mcp-config.js';
+import {
+  LLM_PROVIDERS,
+  PROVIDER_CHOICES,
+  getMcpEnvForProvider,
+  validateApiKey,
+} from '../lib/providers.js';
 
 // ============================================================================
 // Types
@@ -47,6 +53,13 @@ interface InstallOptions {
   configureMcp?: boolean; // Auto-configure MCP for IDEs
   verify?: boolean; // Verify MCP setup after install
   skipVerify?: boolean; // Skip verification
+  llm?: string; // LLM Provider for categorization
+}
+
+/** Selected provider state for the install session */
+interface ProviderState {
+  name: string;
+  apiKey?: string;
 }
 
 interface IdeConfig {
@@ -381,6 +394,147 @@ function processTemplate(content: string, projectName: string): string {
   return content
     .replace(/\{\{PROJECT_NAME\}\}/g, projectName)
     .replace(/\{\{CREATED_AT\}\}/g, now);
+}
+
+// ============================================================================
+// LLM Provider Selection
+// ============================================================================
+
+/**
+ * Select LLM Provider for memory categorization
+ */
+async function selectLlmProvider(options: InstallOptions): Promise<ProviderState> {
+  // If provider specified via CLI option
+  if (options.llm) {
+    const providerName = options.llm.toLowerCase();
+    if (LLM_PROVIDERS[providerName]) {
+      console.log(chalk.green(`  \u2713 \u4f7f\u7528 LLM Provider: ${LLM_PROVIDERS[providerName].displayName}`));
+      return { name: providerName };
+    } else {
+      console.log(chalk.yellow(`  \u26a0 \u672a\u77e5\u7684 Provider: ${options.llm}`));
+      console.log(chalk.gray(`    \u6709\u6548\u9009\u9879: ${Object.keys(LLM_PROVIDERS).join(', ')}`));
+      if (!isTTY() || isCI() || options.yes) {
+        console.log(chalk.red('  \u2717 \u975e\u4ea4\u4e92\u6a21\u5f0f\u4e0b\u5fc5\u987b\u6307\u5b9a\u6709\u6548\u7684 Provider'));
+        return { name: 'none' };
+      }
+      console.log(chalk.gray('    \u5c06\u8fdb\u5165\u4ea4\u4e92\u5f0f\u9009\u62e9...\n'));
+    }
+  }
+
+  // Non-interactive mode: skip provider selection
+  if (!isTTY() || isCI() || options.yes) {
+    console.log(chalk.gray('  \u8df3\u8fc7 LLM Provider \u914d\u7f6e (\u53ef\u7a0d\u540e\u8bbe\u7f6e\u73af\u5883\u53d8\u91cf)'));
+    return { name: 'none' };
+  }
+
+  console.log(chalk.bold.cyan('\n\u2501\u2501\u2501 LLM Provider \u914d\u7f6e \u2501\u2501\u2501\n'));
+  console.log(chalk.gray('\u8bb0\u5fc6\u5206\u7c7b\u529f\u80fd\u9700\u8981 LLM \u670d\u52a1\uff0c\u9009\u62e9\u4e00\u4e2a Provider:\n'));
+
+  const { provider } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'provider',
+      message: '\u9009\u62e9 LLM Provider:',
+      choices: [
+        ...PROVIDER_CHOICES,
+        new inquirer.Separator(),
+        { name: '\u23ed\ufe0f  \u8df3\u8fc7 (\u7a0d\u540e\u914d\u7f6e)', value: 'none' },
+      ],
+      default: 'deepseek',
+    },
+  ]);
+
+  if (provider === 'none') {
+    console.log(chalk.yellow('\n\u5df2\u8df3\u8fc7 LLM \u914d\u7f6e\uff0c\u8bb0\u5fc6\u5206\u7c7b\u529f\u80fd\u6682\u65f6\u4e0d\u53ef\u7528'));
+    console.log(chalk.gray('\u540e\u7eed\u53ef\u901a\u8fc7\u8bbe\u7f6e\u73af\u5883\u53d8\u91cf\u542f\u7528\n'));
+    return { name: 'none' };
+  }
+
+  const providerConfig = LLM_PROVIDERS[provider];
+
+  // Ollama doesn't need API key
+  if (provider === 'ollama') {
+    console.log(chalk.green(`\n  \u2713 \u4f7f\u7528\u672c\u5730 Ollama\uff0c\u65e0\u9700 API Key`));
+    console.log(chalk.gray(`    \u8bf7\u786e\u4fdd\u5df2\u5b89\u88c5\u6a21\u578b: ollama pull ${providerConfig.defaultModel}\n`));
+    return { name: provider };
+  }
+
+  // Other providers need API key
+  const { apiKey } = await inquirer.prompt([
+    {
+      type: 'password',
+      name: 'apiKey',
+      message: `\u8bf7\u8f93\u5165 ${providerConfig.displayName} API Key:`,
+      mask: '*',
+      validate: (input: string) => input.length > 0 || '\u8bf7\u8f93\u5165\u6709\u6548\u7684 API Key',
+    },
+  ]);
+
+  // L2 Fix: Validate API Key
+  const { shouldValidate } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'shouldValidate',
+      message: '\u662f\u5426\u9a8c\u8bc1 API Key \u6709\u6548\u6027?',
+      default: true,
+    },
+  ]);
+
+  if (shouldValidate) {
+    const spinner = ora('\u9a8c\u8bc1 API Key...').start();
+    const result = await validateApiKey(provider, apiKey);
+
+    if (result.valid) {
+      spinner.succeed(chalk.green('API Key \u9a8c\u8bc1\u6210\u529f'));
+    } else {
+      spinner.fail(chalk.red(`API Key \u9a8c\u8bc1\u5931\u8d25: ${result.error}`));
+
+      const { continueAnyway } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'continueAnyway',
+          message: '\u662f\u5426\u4ecd\u7136\u7ee7\u7eed\u4f7f\u7528\u6b64 API Key?',
+          default: false,
+        },
+      ]);
+
+      if (!continueAnyway) {
+        console.log(chalk.yellow('\n\u5df2\u53d6\u6d88\uff0c\u8bf7\u91cd\u65b0\u8fd0\u884c\u5b89\u88c5\u547d\u4ee4'));
+        return { name: 'none' };
+      }
+    }
+  }
+
+  console.log(chalk.green(`\n  \u2713 ${providerConfig.displayName} \u914d\u7f6e\u5b8c\u6210`));
+
+  return { name: provider, apiKey };
+}
+
+/**
+ * Generate .env file content for the selected provider
+ */
+function generateEnvFile(providerState: ProviderState): string {
+  const lines = [
+    '# OpenMemory Plus - Environment Configuration',
+    `# Generated: ${new Date().toISOString()}`,
+    '',
+    '# LLM Provider Configuration',
+  ];
+
+  if (providerState.name !== 'none') {
+    const provider = LLM_PROVIDERS[providerState.name];
+    if (provider && provider.envKey && providerState.apiKey) {
+      lines.push(`${provider.envKey}=${providerState.apiKey}`);
+      if (provider.baseUrl && providerState.name !== 'openai') {
+        const baseUrlKey = provider.envKey.replace('_API_KEY', '_BASE_URL');
+        lines.push(`${baseUrlKey}=${provider.baseUrl}`);
+      }
+      lines.push(`LLM_MODEL=${provider.defaultModel}`);
+    }
+  }
+
+  lines.push('');
+  return lines.join('\n');
 }
 
 // ============================================================================
@@ -734,6 +888,19 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
   }
   console.log(chalk.green('  ✓ 创建 _omp/ (核心目录)'));
 
+  // Copy patches directory for LLM provider support
+  const patchesSource = join(templatesDir, 'patches');
+  const patchesTarget = join(ompDir, 'patches');
+  if (existsSync(patchesSource)) {
+    mkdirSync(patchesTarget, { recursive: true });
+    const patchErrors = copyDir(patchesSource, patchesTarget);
+    if (patchErrors.length > 0) {
+      console.log(chalk.yellow('  ⚠ 部分补丁文件复制失败:'));
+      patchErrors.forEach((err) => console.log(chalk.gray(`    - ${err}`)));
+    }
+    console.log(chalk.green('  ✓ 创建 _omp/patches/ (LLM 适配)'));
+  }
+
   // Process memory template files with project name
   const ompMemoryDir = join(ompDir, 'memory');
   // Ensure memory directory exists (may not be in template)
@@ -867,10 +1034,18 @@ async function phase3_configureMcp(ide: string, options: InstallOptions): Promis
   return true;
 }
 
-function phase3_showCompletion(ide: string, mcpConfigured: boolean): void {
+function phase3_showCompletion(ide: string, mcpConfigured: boolean, providerState?: ProviderState): void {
   console.log(chalk.bold.cyan('\n━━━ 安装完成 ━━━\n'));
 
   console.log(chalk.green.bold('🎉 OpenMemory Plus 已成功安装!\n'));
+
+  // Show provider info if configured
+  if (providerState && providerState.name !== 'none') {
+    const provider = LLM_PROVIDERS[providerState.name];
+    console.log(chalk.bold('🤖 LLM Provider: ') + chalk.cyan(provider.displayName));
+    console.log(chalk.gray(`   模型: ${provider.defaultModel}`));
+    console.log('');
+  }
 
   if (mcpConfigured) {
     console.log(chalk.green('✓ MCP 已自动配置到 ' + (IDE_MCP_CONFIGS[ide]?.name || ide)));
@@ -906,12 +1081,44 @@ export async function installCommand(options: InstallOptions): Promise<void> {
   // Phase 1: Check and install dependencies
   await phase1_checkAndInstallDeps(options);
 
+  // Phase 1.5: Select LLM Provider
+  const providerState = await selectLlmProvider(options);
+
   // Phase 2: Initialize project
   const ide = await phase2_initProject(options);
+
+  // Generate .env file if provider is configured
+  if (providerState && providerState.name !== 'none' && providerState.apiKey) {
+    const cwd = process.cwd();
+    const envPath = join(cwd, '.env');
+    if (!existsSync(envPath) || options.force) {
+      const envContent = generateEnvFile(providerState);
+      writeFileSync(envPath, envContent);
+      console.log(chalk.green(`  \u2713 \u521b\u5efa .env (${LLM_PROVIDERS[providerState.name].displayName} \u914d\u7f6e)`));
+
+      // H3 Fix: \u786e\u4fdd .gitignore \u5305\u542b .env
+      const gitignorePath = join(cwd, '.gitignore');
+      const envEntries = ['.env', '.env.local', '.env*.local'];
+      if (existsSync(gitignorePath)) {
+        const content = readFileSync(gitignorePath, 'utf-8');
+        const missingEntries = envEntries.filter(e => !content.includes(e));
+        if (missingEntries.length > 0) {
+          writeFileSync(gitignorePath, content + '\n# Environment files\n' + missingEntries.join('\n') + '\n');
+          console.log(chalk.green('  \u2713 \u66f4\u65b0 .gitignore (\u6dfb\u52a0 .env)'));
+        }
+      } else {
+        writeFileSync(gitignorePath, '# Environment files\n' + envEntries.join('\n') + '\n');
+        console.log(chalk.green('  \u2713 \u521b\u5efa .gitignore'));
+      }
+
+      // H3 Fix: \u663e\u793a\u5b89\u5168\u8b66\u544a
+      console.log(chalk.yellow('\n  \u26a0\ufe0f  \u5b89\u5168\u63d0\u793a: .env \u6587\u4ef6\u5305\u542b API Key\uff0c\u8bf7\u52ff\u63d0\u4ea4\u5230\u7248\u672c\u63a7\u5236'));
+    }
+  }
 
   // Phase 3: Configure MCP, verify, and test
   const mcpSuccess = await phase3_configureMcp(ide, options);
 
   // Show completion
-  phase3_showCompletion(ide, mcpSuccess);
+  phase3_showCompletion(ide, mcpSuccess, providerState);
 }
