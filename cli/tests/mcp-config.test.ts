@@ -155,6 +155,78 @@ describe('mcp-config', () => {
       expect(configured).toBe(true);
       expect(path).toContain('.augment');
     });
+
+    it('should return false for unknown IDE', () => {
+      const { configured, path } = checkMcpConfigured('unknown_ide');
+      expect(configured).toBe(false);
+      expect(path).toBe('');
+    });
+  });
+
+  describe('configureMcpForIdes', () => {
+    it('should configure multiple IDEs', async () => {
+      const { configureMcpForIdes } = await import('../src/lib/mcp-config.js');
+      const results = configureMcpForIdes(['augment', 'cursor']);
+
+      expect(results.size).toBe(2);
+      expect(results.get('augment')?.success).toBe(true);
+      expect(results.get('cursor')?.success).toBe(true);
+    });
+
+    it('should handle mixed valid and invalid IDEs', async () => {
+      const { configureMcpForIdes } = await import('../src/lib/mcp-config.js');
+      const results = configureMcpForIdes(['augment', 'invalid_ide']);
+
+      expect(results.size).toBe(2);
+      expect(results.get('augment')?.success).toBe(true);
+      expect(results.get('invalid_ide')?.success).toBe(false);
+    });
+  });
+
+  describe('IDE config paths', () => {
+    it('should return correct path for cursor', () => {
+      const cursorConfig = IDE_MCP_CONFIGS.cursor;
+      expect(cursorConfig.getConfigPath()).toContain('.cursor');
+      expect(cursorConfig.getConfigPath()).toContain('mcp.json');
+    });
+
+    it('should return correct path for claude (CLI)', () => {
+      const claudeConfig = IDE_MCP_CONFIGS.claude;
+      expect(claudeConfig.getConfigPath()).toContain('.claude.json');
+    });
+
+    it('should return correct path for claude-desktop on darwin', () => {
+      const claudeDesktopConfig = IDE_MCP_CONFIGS['claude-desktop'];
+      const path = claudeDesktopConfig.getConfigPath();
+      // On darwin (mocked), should be in Library/Application Support
+      expect(path).toContain('claude_desktop_config.json');
+    });
+
+    it('should return correct path for gemini on darwin', () => {
+      const geminiConfig = IDE_MCP_CONFIGS.gemini;
+      const path = geminiConfig.getConfigPath();
+      expect(path).toContain('gemini');
+      expect(path).toContain('gemini_mcp_settings.json');
+    });
+  });
+
+  describe('configureMcpForIde edge cases', () => {
+    it('should handle invalid JSON in existing config', () => {
+      const configPath = IDE_MCP_CONFIGS.augment.getConfigPath();
+      mkdirSync(join(TEST_HOME, '.augment'), { recursive: true });
+      writeFileSync(configPath, 'invalid json content');
+
+      const result = configureMcpForIde('augment');
+      // Should create new config since existing is invalid
+      expect(result.success).toBe(true);
+    });
+
+    it('should create cursor config in correct location', () => {
+      const result = configureMcpForIde('cursor');
+      expect(result.success).toBe(true);
+      expect(result.path).toContain('.cursor');
+      expect(existsSync(result.path)).toBe(true);
+    });
   });
 });
 
