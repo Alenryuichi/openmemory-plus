@@ -44,7 +44,8 @@ describe('mcp-config', () => {
     it('should return list of supported IDEs', () => {
       const ides = getSupportedIdes();
       expect(ides).toContain('augment');
-      expect(ides).toContain('claude');
+      expect(ides).toContain('claude'); // Claude Code CLI
+      expect(ides).toContain('claude-desktop'); // Claude Desktop app
       expect(ides).toContain('cursor');
       expect(ides).toContain('gemini');
     });
@@ -55,6 +56,7 @@ describe('mcp-config', () => {
       const config = getMcpServerConfig();
       expect(config.command).toBe('npx');
       expect(config.args).toContain('openmemory-mcp');
+      expect(config.env.USER_ID).toBe('default'); // Required field
       expect(config.env.MEM0_EMBEDDING_MODEL).toBe('bge-m3');
       expect(config.env.MEM0_EMBEDDING_PROVIDER).toBe('ollama');
     });
@@ -64,7 +66,7 @@ describe('mcp-config', () => {
     it('should return error for unknown IDE', () => {
       const result = configureMcpForIde('unknown_ide');
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Unknown IDE');
+      expect(result.error).toContain('未知的 IDE');
     });
 
     it('should create new config file for augment', () => {

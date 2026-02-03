@@ -35,6 +35,7 @@ const OPENMEMORY_MCP_CONFIG: McpServerConfig = {
   command: 'npx',
   args: ['-y', 'openmemory-mcp'],
   env: {
+    USER_ID: 'default', // Required: identifies the user for memory storage
     MEM0_EMBEDDING_MODEL: 'bge-m3',
     MEM0_EMBEDDING_PROVIDER: 'ollama',
     OLLAMA_HOST: 'http://localhost:11434',
@@ -56,18 +57,23 @@ export const IDE_MCP_CONFIGS: Record<string, IdeConfigInfo> = {
     getConfigPath: () => join(homedir(), '.augment', 'settings.json'),
     configKey: 'mcpServers',
   },
-  claude: {
+  'claude-desktop': {
     name: 'Claude Desktop',
     getConfigPath: () => {
       const p = platform();
       if (p === 'darwin') {
         return join(homedir(), 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json');
       } else if (p === 'win32') {
-        return join(process.env.APPDATA || '', 'Claude', 'claude_desktop_config.json');
+        return join(process.env.APPDATA || homedir(), 'Claude', 'claude_desktop_config.json');
       }
       // Linux
       return join(homedir(), '.config', 'claude', 'claude_desktop_config.json');
     },
+    configKey: 'mcpServers',
+  },
+  claude: {
+    name: 'Claude Code (CLI)',
+    getConfigPath: () => join(homedir(), '.claude.json'),
     configKey: 'mcpServers',
   },
   cursor: {
@@ -80,7 +86,7 @@ export const IDE_MCP_CONFIGS: Record<string, IdeConfigInfo> = {
     getConfigPath: () => {
       const p = platform();
       if (p === 'win32') {
-        return join(process.env.APPDATA || '', 'gemini', 'settings', 'gemini_mcp_settings.json');
+        return join(process.env.APPDATA || homedir(), 'gemini', 'settings', 'gemini_mcp_settings.json');
       }
       return join(homedir(), '.config', 'gemini', 'settings', 'gemini_mcp_settings.json');
     },
@@ -127,7 +133,7 @@ export function configureMcpForIde(ide: string, force: boolean = false): McpConf
     return {
       success: false,
       path: '',
-      error: `Unknown IDE: ${ide}`,
+      error: `未知的 IDE: ${ide}`,
     };
   }
 
@@ -289,7 +295,7 @@ async function verifyQdrant(): Promise<boolean> {
 }
 
 /**
- * Verify that Ollama is accessible and has the required model
+ * Verify that Ollama is accessible and has the required embedding model (bge-m3)
  */
 async function verifyOllama(): Promise<boolean> {
   try {
@@ -298,8 +304,9 @@ async function verifyOllama(): Promise<boolean> {
 
     const data = await response.json() as { models?: Array<{ name: string }> };
     const models = data.models || [];
+    // Check for exact bge-m3 model match (with or without tag suffix)
     return models.some((m: { name: string }) =>
-      m.name.includes('bge-m3') || m.name.includes('nomic-embed')
+      m.name === 'bge-m3' || m.name === 'bge-m3:latest' || m.name.startsWith('bge-m3:')
     );
   } catch {
     return false;
@@ -308,10 +315,12 @@ async function verifyOllama(): Promise<boolean> {
 
 /**
  * Verify that MCP server can start and respond
+ * @param timeoutMs - Timeout in milliseconds (default: 10000)
  */
-async function verifyMcpServer(): Promise<boolean> {
+async function verifyMcpServer(timeoutMs: number = 10000): Promise<boolean> {
   return new Promise((resolve) => {
     let resolved = false;
+    let hasReceivedOutput = false;
 
     // Start the MCP server process
     const proc: ChildProcess = spawn('npx', ['-y', 'openmemory-mcp'], {
@@ -322,14 +331,22 @@ async function verifyMcpServer(): Promise<boolean> {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
+    const cleanup = () => {
+      try {
+        proc.kill('SIGTERM');
+      } catch {
+        // Process may already be dead
+      }
+    };
+
     const timeout = setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        proc.kill();
-        // If the process started without immediate error, consider it responsive
-        resolve(true);
+        cleanup();
+        // Only consider success if we received some output before timeout
+        resolve(hasReceivedOutput);
       }
-    }, 5000);
+    }, timeoutMs);
 
     proc.on('error', () => {
       if (!resolved) {
@@ -346,7 +363,7 @@ async function verifyMcpServer(): Promise<boolean> {
         if (!resolved) {
           resolved = true;
           clearTimeout(timeout);
-          proc.kill();
+          cleanup();
           resolve(false);
         }
       }
@@ -354,10 +371,11 @@ async function verifyMcpServer(): Promise<boolean> {
 
     // If stdout receives any data, it means MCP is working
     proc.stdout?.on('data', () => {
+      hasReceivedOutput = true;
       if (!resolved) {
         resolved = true;
         clearTimeout(timeout);
-        proc.kill();
+        cleanup();
         resolve(true);
       }
     });

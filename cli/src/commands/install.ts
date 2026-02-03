@@ -74,7 +74,8 @@ interface OllamaTagsResponse {
 // Only commands and skills directories - no config files (AGENTS.md, CLAUDE.md, etc.)
 const IDE_CONFIGS: Record<string, IdeConfig> = {
   augment: { commandsDir: '.augment/commands', skillsDir: '.augment/skills' },
-  claude: { commandsDir: '.claude/commands', skillsDir: '.claude/skills' },
+  claude: { commandsDir: '.claude/commands', skillsDir: '.claude/skills' }, // Claude Code CLI
+  'claude-desktop': { commandsDir: '.claude/commands', skillsDir: '.claude/skills' }, // Claude Desktop (same dirs)
   cursor: { commandsDir: '.cursor/commands', skillsDir: '.cursor/skills' },
   gemini: { commandsDir: '.gemini/commands', skillsDir: '.gemini/skills' },
   common: { commandsDir: '.agents/commands', skillsDir: '.agents/skills' },
@@ -681,7 +682,8 @@ async function phase2_initProject(options: InstallOptions): Promise<string> {
           message: '选择 IDE 类型 (空格选择，回车确认):',
           choices: [
             { name: 'Augment', value: 'augment', checked: true },
-            { name: 'Claude Code', value: 'claude' },
+            { name: 'Claude Code (CLI)', value: 'claude' },
+            { name: 'Claude Desktop', value: 'claude-desktop' },
             { name: 'Cursor', value: 'cursor' },
             { name: 'Gemini', value: 'gemini' },
             { name: '通用 (AGENTS.md)', value: 'common' },
