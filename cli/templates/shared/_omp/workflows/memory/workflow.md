@@ -31,14 +31,37 @@ This uses **micro-file architecture** with **menu-driven routing**:
 - `memory_folder` = `{project-root}/_omp/memory`
 - `steps_path` = `{installed_path}/steps`
 
-### MCP Tools Available
+### ⚠️ DUAL-LAYER STORAGE RULE
+
+**CRITICAL: This system has TWO storage layers. You MUST use BOTH appropriately!**
+
+| Layer | Storage | What to Store |
+|-------|---------|---------------|
+| **项目级** | `_omp/memory/*.md` files | Project config, tech stack, decisions, URLs, paths |
+| **用户级** | openmemory MCP | User preferences, skills, cross-project habits |
+
+**DO NOT store everything to openmemory! Project-specific info MUST go to `_omp/memory/` files!**
+
+### MCP Tools (User-Level ONLY)
 
 | Tool | Purpose |
 |------|---------|
-| `add_memories_openmemory` | 添加用户级记忆 |
+| `add_memories_openmemory` | 添加**用户级**记忆 (偏好/技能) |
 | `search_memory_openmemory` | 语义搜索记忆 |
 | `list_memories_openmemory` | 列出所有记忆 |
 | `delete_memories_openmemory` | 删除指定记忆 |
+
+### File Operations (Project-Level)
+
+| File | What to Store |
+|------|---------------|
+| `techContext.md` | Tech stack, deployment URLs, env vars |
+| `decisions.yaml` | Architecture decisions, tech choices |
+| `projectbrief.md` | Project overview, goals |
+| `productContext.md` | Product requirements, user stories |
+| `systemPatterns.md` | Code patterns, conventions |
+| `activeContext.md` | Current session context |
+| `progress.md` | Milestones, completion status |
 
 ---
 

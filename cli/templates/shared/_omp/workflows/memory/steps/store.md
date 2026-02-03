@@ -5,73 +5,153 @@ description: 手动添加新的记忆到系统中
 
 # Step: 存储记忆
 
-## EXECUTION RULES
+## ⚠️ CRITICAL RULE
 
-- ✅ Get content from user if not provided
-- ✅ Classify and route to correct storage
-- ✅ Confirm before storing
+**MUST classify EVERY piece of information into project-level OR user-level BEFORE storing!**
+
+- **项目级** → Write to `_omp/memory/*.md` or `decisions.yaml` files
+- **用户级** → Call `add_memories_openmemory` MCP tool
+
+**DO NOT store everything to openmemory! Project-specific info MUST go to `_omp/memory/`!**
+
+---
+
+## CLASSIFICATION RULES (MANDATORY)
+
+### 项目级 → `_omp/memory/` (Write to files)
+
+| Info Type | Target File | Examples |
+|-----------|-------------|----------|
+| 项目概述、目标、范围 | `projectbrief.md` | "这是一个简历生成器项目" |
+| 产品需求、用户故事 | `productContext.md` | "用户需要导出 PDF" |
+| 技术栈、框架、依赖 | `techContext.md` | "使用 React + TypeScript" |
+| 部署 URL、环境变量、路径 | `techContext.md` | "部署到 vercel.app" |
+| 架构决策、技术选型 | `decisions.yaml` | "选择 PostgreSQL 而非 MongoDB" |
+| 代码规范、设计模式 | `systemPatterns.md` | "使用 Repository 模式" |
+| 当前任务、进度 | `activeContext.md` | "正在实现登录功能" |
+| 里程碑、完成状态 | `progress.md` | "v1.0 已发布" |
+
+### 用户级 → openmemory (MCP tool)
+
+| Info Type | Examples |
+|-----------|----------|
+| 用户偏好 | "我喜欢用 pnpm", "偏好函数式编程" |
+| 用户技能 | "熟悉 Python", "有 5 年 React 经验" |
+| 跨项目习惯 | "习惯用 Vim 键位", "喜欢暗色主题" |
+| 个人信息 | "我是全栈工程师", "在北京工作" |
 
 ---
 
 ## EXECUTION
 
-### 1. Get Content
+### Step 1: Get Content
 
-If user provided content in their command, use it directly.
-Otherwise ask:
+If user provided content, use it. Otherwise ask:
 > "请输入要存储的信息："
 
-### 2. Classify Information
+### Step 2: MANDATORY Classification
 
-Analyze content and determine storage location:
-
-| Keywords | Storage | Action |
-|----------|---------|--------|
-| 项目路径, URL, 配置, deploy, domain | `_omp/memory/` | Write to YAML |
-| 选择, 决定, 使用, 采用 (技术决策) | `_omp/memory/decisions.yaml` | Append decision |
-| 喜欢, 偏好, 习惯 (用户偏好) | openmemory | `add_memories_openmemory` |
-| 熟悉, 擅长, 会用 (用户技能) | openmemory | `add_memories_openmemory` |
-| Other | Ask user | - |
-
-### 3. Confirm Storage
+**For EACH piece of information, determine:**
 
 ```
-📝 即将存储:
+┌─────────────────────────────────────────────────────────┐
+│ 这条信息是关于...                                        │
+├─────────────────────────────────────────────────────────┤
+│ ❓ 这个项目的配置/决策/架构？                             │
+│    → 项目级 → _omp/memory/{file}.md                     │
+│                                                         │
+│ ❓ 用户个人的偏好/技能/习惯？                             │
+│    → 用户级 → openmemory                                │
+└─────────────────────────────────────────────────────────┘
+```
 
-内容: "{content}"
-类型: {type}
-位置: {location}
+### Step 3: Show Classification Result
+
+Display classification for user confirmation:
+
+```
+📝 信息分类结果:
+
+┌─────────────────────────────────────────────────────────┐
+│ 📁 项目级 (_omp/memory/)                                │
+├─────────────────────────────────────────────────────────┤
+│ 1. "部署到 vercel.app" → techContext.md                 │
+│ 2. "使用 React + TypeScript" → techContext.md          │
+│ 3. "选择 PostgreSQL" → decisions.yaml                  │
+├─────────────────────────────────────────────────────────┤
+│ 👤 用户级 (openmemory)                                  │
+├─────────────────────────────────────────────────────────┤
+│ 4. "熟悉 Python" → openmemory                          │
+│ 5. "偏好函数式编程" → openmemory                        │
+└─────────────────────────────────────────────────────────┘
 
 确认存储？[Y/n]
 ```
 
-### 4. Execute Storage
+### Step 4: Execute Storage
 
-**For project-level:**
-- Read existing YAML file
-- Append new entry with timestamp
-- Write back
+#### For 项目级 (MUST use file operations):
 
-**For user-level:**
-- Call `add_memories_openmemory` with content
+**techContext.md example:**
+```markdown
+## Tech Stack
 
-### 5. Display Result
-
-```
-💾 记忆已存储
-
-类型: {type}
-内容: "{content}"
-位置: {location}
-时间: {timestamp}
+| Category | Technology | Version |
+|----------|------------|---------|
+| Language | TypeScript | 5.x |
+| Framework | React | 18.x |
+| Deployment | Vercel | - |
 ```
 
-### 6. Batch Storage
+**decisions.yaml example:**
+```yaml
+decisions:
+  - id: dec-2026-02-03-001
+    date: 2026-02-03
+    title: "Database Selection"
+    context: "Need complex queries"
+    choice: "PostgreSQL"
+    alternatives: ["MongoDB", "MySQL"]
+    impact: "All data models use SQL"
+```
 
-If content contains multiple items (comma/semicolon separated):
-- Split into individual items
-- Classify each separately
-- Store all with confirmation
+**Action:** Read file → Append/Update content → Write file
+
+#### For 用户级:
+
+**Action:** Call `add_memories_openmemory` with content
+
+### Step 5: Display Result
+
+```
+💾 存储完成
+
+📁 项目级 (_omp/memory/):
+  ✓ techContext.md: 添加 2 条
+  ✓ decisions.yaml: 添加 1 条
+
+👤 用户级 (openmemory):
+  ✓ 添加 2 条记忆
+
+时间: 2026-02-03
+```
+
+---
+
+## EXAMPLE: Batch Storage
+
+User says: "存储一下：项目用 React，部署到 Vercel，我熟悉 TypeScript"
+
+**Classification:**
+| Content | Type | Target |
+|---------|------|--------|
+| "项目用 React" | 项目技术栈 | `techContext.md` |
+| "部署到 Vercel" | 项目部署 | `techContext.md` |
+| "我熟悉 TypeScript" | 用户技能 | openmemory |
+
+**Execution:**
+1. Update `_omp/memory/techContext.md` with React + Vercel
+2. Call `add_memories_openmemory("用户熟悉 TypeScript")`
 
 ---
 
