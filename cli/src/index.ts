@@ -49,9 +49,11 @@ program
   .option('-i, --ide <type>', 'IDE 类型: augment, claude, cursor, gemini, common')
   .option('--llm <provider>', 'LLM Provider: deepseek, minimax, zhipu, qwen, openai, ollama')
   .option('--skip-deps', '跳过依赖安装，仅配置项目')
-  .option('--show-mcp', '显示 MCP 配置')
+  .option('--show-mcp', '显示 MCP 配置 JSON')
   .option('-f, --force', '强制覆盖已存在的配置文件')
   .option('--compose', '使用 Docker Compose 一键部署依赖')
+  .option('--no-configure-mcp', '跳过 MCP 自动配置')
+  .option('--skip-verify', '跳过安装后验证')
   .action(installCommand);
 
 // Secondary commands (for advanced users)
