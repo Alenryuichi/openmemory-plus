@@ -1,7 +1,26 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isSystemReady, type SystemStatus } from '../src/lib/detector.js';
+import { isSystemReady, checkAllDependencies, type SystemStatus } from '../src/lib/detector.js';
 
 describe('detector', () => {
+  describe('checkAllDependencies', () => {
+    it('should return status for all dependencies', async () => {
+      const status = await checkAllDependencies();
+
+      // Verify all dependency keys exist
+      expect(status).toHaveProperty('docker');
+      expect(status).toHaveProperty('ollama');
+      expect(status).toHaveProperty('qdrant');
+      expect(status).toHaveProperty('openmemory');
+      expect(status).toHaveProperty('bgeM3');
+
+      // Verify each has required properties
+      expect(status.docker).toHaveProperty('name');
+      expect(status.docker).toHaveProperty('installed');
+      expect(status.ollama).toHaveProperty('name');
+      expect(status.ollama).toHaveProperty('installed');
+    });
+  });
+
   describe('isSystemReady', () => {
     it('should return true when all dependencies are ready', () => {
       const status: SystemStatus = {
