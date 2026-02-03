@@ -1,0 +1,78 @@
+# {{PROJECT_NAME}} - Claude Code Instructions
+
+This project uses **OpenMemory Plus** for persistent memory management.
+
+---
+
+## 🧠 Memory System (Auto-Enabled)
+
+> **Core Principle**: Agent automatically extracts memories without user intervention
+
+### Session Lifecycle
+
+**🚀 Session Start** - Auto-load:
+```
+Read _omp/memory/project.yaml      # Project config
+Read _omp/memory/activeContext.md  # Recent context
+Search openmemory                  # User preferences
+```
+
+**⚡ During Session** - Auto-extraction triggers:
+
+| Trigger | Detection Signal | Storage |
+|---------|------------------|---------|
+| Task complete | Task marked complete | `progress.md` |
+| Tech decision | "decide/choose" or "决定/选择" | `decisions.yaml` |
+| Config change | .env/config modified | `project.yaml` |
+| User preference | "I prefer" or "我喜欢" | `openmemory` |
+
+**🏁 Session End** - Auto-save:
+- Session summary → `activeContext.md`
+- Progress updates → `progress.md`
+
+---
+
+## 📁 Project Memory (`_omp/memory/`)
+
+| File | Purpose |
+|------|---------|
+| `project.yaml` | Project config (SSOT) |
+| `decisions.yaml` | Technical decisions |
+| `activeContext.md` | Current working context |
+| `productContext.md` | Product/feature requirements |
+| `progress.md` | Development milestones |
+| `projectbrief.md` | Project overview |
+| `systemPatterns.md` | Architecture patterns |
+| `techContext.md` | Technical stack info |
+
+---
+
+## 🎯 Manual Commands
+
+Use `/memory` for manual operations:
+
+| Command | Description |
+|---------|-------------|
+| `/memory` | Open memory menu |
+| `/memory save` | Force save context |
+| `/memory search <query>` | Search memories |
+
+---
+
+## 📍 Locations
+
+- Commands: `.claude/commands/`
+- Skills: `.claude/skills/`
+- Core: `_omp/`
+- Subagent Prompt: `_omp/skills/memory-extraction/subagent-prompt.md`
+
+---
+
+## ⚙️ MCP Integration
+
+Memory backed by Qdrant vector database via MCP.
+
+Config: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Run for setup: `npx openmemory-plus install --show-mcp`
+
