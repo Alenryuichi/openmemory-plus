@@ -49,5 +49,3 @@ cli/_omp/
 cli/.cursor/
 cli/.claude/
 cli/.gemini/
-
-docs/
