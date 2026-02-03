@@ -1,0 +1,32 @@
+# Decision Template
+# 追加到 memory/decisions.yaml 的 decisions 数组中
+#
+# ============================================
+# 使用说明 (Agent 参考)
+# ============================================
+# 变量占位符:
+#   {{date}}      - 日期 (YYYY-MM-DD)
+#   {{seq}}       - 当日序号 (001, 002, 003...)
+#   {{title}}     - 决策标题
+#   {{context}}   - 决策背景/问题描述
+#   {{choice}}    - 最终选择
+#   {{alt_1}}     - 备选方案 (可多个: alt_2, alt_3...)
+#   {{rationale}} - 选择理由
+#   {{impact_1}}  - 影响范围 (可多个: impact_2, impact_3...)
+# ============================================
+
+- id: dec-{{date}}-{{seq}}
+  date: {{date}}
+  title: "{{title}}"
+  context: |
+    {{context}}
+  choice: "{{choice}}"
+  alternatives:
+    - "{{alt_1}}"
+    - "{{alt_2}}"
+  rationale: |
+    {{rationale}}
+  impact:
+    - "{{impact_1}}"
+  status: active
+

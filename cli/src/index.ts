@@ -47,6 +47,7 @@ program
   .description('一键安装和配置 OpenMemory Plus (推荐)')
   .option('-y, --yes', '跳过确认提示')
   .option('-i, --ide <type>', 'IDE 类型: augment, claude, cursor, gemini, common')
+  .option('--llm <provider>', 'LLM Provider: deepseek, minimax, zhipu, qwen, openai, ollama')
   .option('--skip-deps', '跳过依赖安装，仅配置项目')
   .option('--show-mcp', '显示 MCP 配置 JSON')
   .option('-f, --force', '强制覆盖已存在的配置文件')

@@ -1,0 +1,35 @@
+# memory/sessions/{{date}}.yaml - 会话记录
+# 由 memory-extraction skill 自动维护
+#
+# ============================================
+# 使用说明 (Agent 参考)
+# ============================================
+# 变量占位符:
+#   {{date}}           - 日期 (YYYY-MM-DD)
+#   {{timestamp}}      - ISO 8601 时间戳 (2026-02-02T14:30:00+08:00)
+#   {{summary}}        - 会话摘要
+#   {{action_1}}       - 关键操作 (可多个: action_2, action_3...)
+#   {{decision_id}}    - 决策 ID (dec-YYYY-MM-DD-NNN)
+#   {{decision_title}} - 决策标题
+#   {{outcome_1}}      - 成果 (可多个: outcome_2, outcome_3...)
+# ============================================
+
+date: {{date}}
+
+sessions:
+  - id: session-001
+    summary: "{{summary}}"
+    key_actions:
+      - "{{action_1}}"
+    decisions:
+      - id: "{{decision_id}}"
+        title: "{{decision_title}}"
+    outcomes:
+      - "{{outcome_1}}"
+
+# 元数据
+_meta:
+  last_updated: {{timestamp}}
+  updated_by: memory-extraction-skill
+  total_sessions: 1
+
