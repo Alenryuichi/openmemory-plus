@@ -15,6 +15,12 @@ import {
   depsLogsCommand,
   depsPullModelCommand,
 } from './commands/deps.js';
+import { searchCommand } from './commands/search.js';
+import {
+  memoryListCommand,
+  memoryDeleteCommand,
+  memoryExportCommand,
+} from './commands/memory.js';
 
 // Fix Issue #9: Read version from package.json
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -66,6 +72,7 @@ program
   .command('doctor')
   .description('诊断并修复问题')
   .option('--fix', '自动修复问题')
+  .option('-v, --verbose', '显示详细信息')
   .action(doctorCommand);
 
 // Deps command group - Docker Compose based dependency management
@@ -109,6 +116,52 @@ deps
   .command('pull-model')
   .description('手动下载 BGE-M3 模型')
   .action(depsPullModelCommand);
+
+// Search command (Issue #10)
+program
+  .command('search <query>')
+  .description('🔍 语义搜索记忆')
+  .option('-l, --limit <number>', '返回结果数量', '10')
+  .option('--json', '以 JSON 格式输出')
+  .action((query, options) => searchCommand(query, {
+    limit: parseInt(options.limit, 10),
+    json: options.json,
+  }));
+
+// Memory command group (Issue #11)
+const memory = program
+  .command('memory')
+  .alias('mem')
+  .description('📦 批量记忆管理');
+
+memory
+  .command('list')
+  .alias('ls')
+  .description('列出所有记忆')
+  .option('-l, --limit <number>', '返回数量限制', '50')
+  .option('--json', '以 JSON 格式输出')
+  .action((options) => memoryListCommand({
+    limit: parseInt(options.limit, 10),
+    json: options.json,
+  }));
+
+memory
+  .command('delete')
+  .alias('rm')
+  .description('删除记忆')
+  .option('--all', '删除所有记忆')
+  .option('--ids <ids>', '要删除的记忆 ID (逗号分隔)')
+  .action(memoryDeleteCommand);
+
+memory
+  .command('export')
+  .description('导出记忆到 JSON 文件')
+  .option('-o, --output <file>', '输出文件名', 'memories-export.json')
+  .option('-l, --limit <number>', '导出数量限制', '1000')
+  .action((options) => memoryExportCommand({
+    output: options.output,
+    limit: parseInt(options.limit, 10),
+  }));
 
 // Parse and execute
 program.parse();
