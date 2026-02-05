@@ -37,9 +37,18 @@
 
 ## 🎯 简介
 
+> **厌倦了每次切换 AI 工具都要重复自我介绍？**
+>
+> Cursor 不知道你在 Claude 里说过喜欢 TypeScript，Augment 不记得你昨天的技术决策...
+>
+> **OpenMemory Plus 让所有 AI Agent 共享同一份记忆。**
+
 **OpenMemory Plus** 是一个为 AI Agent 设计的统一记忆管理框架，整合项目级 (`_omp/memory/`) 和用户级 (`openmemory` MCP) 双层记忆系统。
 
-> **让任何 AI Agent 在 5 分钟内获得持久记忆能力。**
+```bash
+# 5 分钟安装，终结 AI 失忆症
+npx openmemory-plus install
+```
 
 ### 📸 效果展示
 
@@ -784,29 +793,49 @@ npx openmemory-plus install
 
 ## 🗺️ Roadmap
 
-### v1.5 (当前)
-- [x] 双层记忆架构
+> 采用 **Now / Next / Later** 模式，专注当前方向，灵活调整优先级。
+
+### 🔥 Now (进行中)
+
+**增长与社区建设**
+- [ ] 内容营销 — 痛点文章、对比视频、使用案例
+- [ ] 社区建设 — Discord/微信群、用户故事征集
+- [ ] 文档完善 — 故障排查指南、最佳实践
+
+**产品体验优化**
+- [ ] 安装成功率提升 — 更好的错误提示和自动修复
+- [ ] 首次体验优化 — 5 分钟内感受到价值
+
+### 📅 Next (下一阶段)
+
+- [ ] 记忆搜索增强 — 语义搜索、模糊匹配
+- [ ] 批量记忆管理 — CLI 命令支持批量操作
+- [ ] 更多 IDE 支持 — Windsurf, Cline
+- [ ] 记忆导入/导出 — 数据可移植性
+
+### 💡 Later (未来考虑)
+
+- [ ] Web UI 管理界面
+- [ ] 团队记忆共享 (可选)
+- [ ] 云端同步选项
+- [ ] 记忆分析和洞察
+
+### ✅ Done (v1.5)
+
+<details>
+<summary>已完成功能</summary>
+
+- [x] 双层记忆架构 (项目级 + 用户级)
 - [x] 智能分类路由
 - [x] 多 IDE 支持 (Augment, Claude, Cursor, Gemini)
-- [x] CLI 安装工具
+- [x] CLI 安装工具 (`npx openmemory-plus install`)
 - [x] 敏感信息过滤
 - [x] 多 LLM Provider 支持 (DeepSeek, MiniMax, ZhiPu, Qwen, OpenAI, Ollama)
 - [x] Docker Compose 一键部署
 - [x] 渐进式配置 (已有文件追加而非覆盖)
 - [x] MCP 自动配置与验证
 
-### v2.0 (计划中)
-- [ ] Web UI 管理界面
-- [ ] 团队记忆共享
-- [ ] 记忆导入/导出
-- [ ] 自定义分类规则
-- [ ] 更多 IDE 支持 (Windsurf, Cline)
-
-### v3.0 (远期)
-- [ ] 云端同步选项
-- [ ] 记忆分析和洞察
-- [ ] AI 驱动的记忆整理
-- [ ] 企业版功能
+</details>
 
 ---
 
