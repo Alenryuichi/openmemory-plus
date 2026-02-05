@@ -820,6 +820,8 @@ npx openmemory-plus install
 - [ ] 云端同步选项
 - [ ] 记忆分析和洞察
 
+👉 **[查看完整 Roadmap Issues](https://github.com/Alenryuichi/openmemory-plus/issues?q=is%3Aissue+is%3Aopen+label%3A%22roadmap%3A+now%22%2C%22roadmap%3A+next%22%2C%22roadmap%3A+later%22)**
+
 ### ✅ Done (v1.5)
 
 <details>
