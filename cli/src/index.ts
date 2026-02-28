@@ -15,7 +15,7 @@ import {
   depsLogsCommand,
   depsPullModelCommand,
 } from './commands/deps.js';
-import { searchCommand } from './commands/search.js';
+import { searchCommand, searchThemesCommand } from './commands/search.js';
 import {
   memoryListCommand,
   memoryDeleteCommand,
@@ -117,16 +117,26 @@ deps
   .description('手动下载 BGE-M3 模型')
   .action(depsPullModelCommand);
 
-// Search command (Issue #10)
+// Search command (Issue #10) with xMemory hierarchical support
 program
   .command('search <query>')
   .description('🔍 语义搜索记忆')
   .option('-l, --limit <number>', '返回结果数量', '10')
   .option('--json', '以 JSON 格式输出')
-  .action((query, options) => searchCommand(query, {
-    limit: parseInt(options.limit, 10),
-    json: options.json,
-  }));
+  .option('--level <level>', '搜索层级: theme | semantic (默认: semantic)', 'semantic')
+  .option('--no-expand', '禁用主题展开到语义层 (仅在 --level theme 时有效)')
+  .action((query, options) => {
+    const searchOptions = {
+      limit: parseInt(options.limit, 10),
+      json: options.json,
+      level: options.level as 'theme' | 'semantic' | 'all',
+      expand: options.expand !== false, // --no-expand sets this to false
+    };
+    if (options.level === 'theme') {
+      return searchThemesCommand(query, searchOptions);
+    }
+    return searchCommand(query, searchOptions);
+  });
 
 // Memory command group (Issue #11)
 const memory = program

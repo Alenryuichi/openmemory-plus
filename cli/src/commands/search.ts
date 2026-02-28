@@ -1,9 +1,13 @@
 import chalk from 'chalk';
 import ora from 'ora';
+import * as path from 'node:path';
+import { ThemeManager, nodeFs, DEFAULT_THEME_CONFIG } from '../lib/memory/index.js';
 
 interface SearchOptions {
   limit?: number;
   json?: boolean;
+  level?: 'theme' | 'semantic' | 'all';
+  expand?: boolean; // AC8: --no-expand option
 }
 
 interface MemoryResult {
@@ -133,3 +137,74 @@ export async function searchCommand(query: string, options: SearchOptions): Prom
   });
 }
 
+// ============ Theme Search (xMemory L3) ============
+
+export async function searchThemesCommand(query: string, options: SearchOptions): Promise<void> {
+  if (!query || query.trim() === '') {
+    console.log(chalk.red('❌ 请提供搜索关键词'));
+    console.log(chalk.gray('用法: openmemory-plus search <query> --level theme'));
+    return;
+  }
+
+  console.log(chalk.cyan.bold('\n🔍 搜索主题记忆\n'));
+
+  // Generate embedding
+  const spinner = ora('生成语义向量...').start();
+  const embedding = await getEmbedding(query);
+
+  if (!embedding) {
+    spinner.fail('无法生成语义向量');
+    console.log(chalk.yellow('请确保 Ollama 正在运行且 BGE-M3 已安装:'));
+    console.log(chalk.gray('  ollama serve'));
+    console.log(chalk.gray('  ollama pull bge-m3'));
+    return;
+  }
+
+  // Load theme manager
+  spinner.text = '搜索主题...';
+  const storageDir = path.join(process.cwd(), '_omp', 'memory');
+
+  // Check if memory directory exists
+  if (!nodeFs.existsSync(storageDir)) {
+    spinner.fail('记忆目录不存在');
+    console.log(chalk.yellow('请先运行: npx openmemory-plus install'));
+    return;
+  }
+
+  const themeManager = new ThemeManager(storageDir, 'default', DEFAULT_THEME_CONFIG, nodeFs);
+  themeManager.loadThemes();
+
+  const limit = options.limit || 5;
+  const results = themeManager.searchThemes(embedding, limit);
+  spinner.stop();
+
+  if (results.length === 0) {
+    console.log(chalk.yellow('未找到相关主题'));
+    console.log(chalk.gray(`搜索词: "${query}"`));
+    console.log(chalk.gray('提示: 主题会在记忆积累后自动形成'));
+    return;
+  }
+
+  if (options.json) {
+    const jsonResults = results.map(r => ({
+      themeId: r.theme.themeId,
+      summary: r.theme.summary,
+      score: r.score,
+      memberCount: r.theme.memberCount,
+    }));
+    console.log(JSON.stringify(jsonResults, null, 2));
+    return;
+  }
+
+  console.log(chalk.green(`找到 ${results.length} 个相关主题:\n`));
+
+  results.forEach((result, index) => {
+    const { theme, score } = result;
+    const scoreStr = chalk.gray(`(${(score * 100).toFixed(1)}%)`);
+    const memberStr = chalk.blue(`[${theme.memberCount} 条记忆]`);
+
+    console.log(chalk.bold(`${index + 1}. ${scoreStr} ${memberStr}`));
+    console.log(`   ${theme.summary}`);
+    console.log('');
+  });
+}

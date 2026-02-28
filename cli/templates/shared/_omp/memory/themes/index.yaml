@@ -1,0 +1,10 @@
+# OpenMemory Plus - Theme Index
+# xMemory L3 (Theme) layer metadata
+# Centroids stored separately in embeddings.json
+
+version: "1.0"
+themes: []
+metadata:
+  totalThemes: 0
+  lastAssimilation: null
+
