@@ -63,11 +63,14 @@ export class ThemeManager {
   private userId: string;
   private config: ThemeConfig;
   private fs: FileSystem;
-  
+
   private themes: Map<string, ThemeNode> = new Map();
-  private embeddings: Map<string, number[]> | null = null; // Lazy loaded
+  private embeddings: Map<string, number[]> | null = null; // Theme centroids (lazy loaded)
   private embeddingsLoaded = false;
-  
+
+  // Semantic embeddings cache (populated during assimilate, used for clustering)
+  private semanticEmbCache: Map<string, number[]> = new Map();
+
   constructor(
     storageDir: string,
     userId: string,
@@ -172,6 +175,11 @@ export class ThemeManager {
       this.loadEmbeddings();
     }
 
+    // Cache semantic embeddings for clustering during split
+    for (const sem of newSemantics) {
+      this.semanticEmbCache.set(sem.memoryId, sem.embedding);
+    }
+
     for (const sem of newSemantics) {
       this.attachSemantic(sem);
     }
@@ -239,33 +247,141 @@ export class ThemeManager {
     }
 
     for (const theme of toSplit) {
-      // Simple split: divide into two themes
-      const mid = Math.ceil(theme.semanticIds.length / 2);
-      const ids1 = theme.semanticIds.slice(0, mid);
-      const ids2 = theme.semanticIds.slice(mid);
+      // Use connected component clustering (xMemory paper algorithm)
+      const clusters = this.clusterSemantics(theme.semanticIds);
 
-      // Update original theme
-      theme.semanticIds = ids1;
-      theme.memberCount = ids1.length;
-      theme.summary = theme.summary + ' (split 1)';
+      if (clusters.length <= 1) {
+        // Cannot split further, keep as is
+        continue;
+      }
+
+      // Update original theme with first cluster
+      const firstCluster = clusters[0];
+      theme.semanticIds = firstCluster;
+      theme.memberCount = firstCluster.length;
+      theme.centroid = this.computeClusterCentroid(firstCluster);
       theme.updatedAt = new Date();
+      this.embeddings!.set(theme.themeId, theme.centroid);
 
-      // Create new theme for second half
-      const newThemeId = randomUUID();
-      const newTheme: ThemeNode = {
-        themeId: newThemeId,
-        summary: theme.summary.replace('(split 1)', '(split 2)'),
-        centroid: theme.centroid, // Will need proper recomputation
-        semanticIds: ids2,
-        neighbors: [],
-        memberCount: ids2.length,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      // Create new themes for remaining clusters
+      for (let i = 1; i < clusters.length; i++) {
+        const cluster = clusters[i];
+        const newThemeId = randomUUID();
+        const centroid = this.computeClusterCentroid(cluster);
 
-      this.themes.set(newThemeId, newTheme);
-      this.embeddings!.set(newThemeId, newTheme.centroid);
+        const newTheme: ThemeNode = {
+          themeId: newThemeId,
+          summary: `${theme.summary} (cluster ${i + 1})`,
+          centroid,
+          semanticIds: cluster,
+          neighbors: [],
+          memberCount: cluster.length,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        this.themes.set(newThemeId, newTheme);
+        this.embeddings!.set(newThemeId, centroid);
+      }
     }
+  }
+
+  /**
+   * Cluster semantics by connectivity (xMemory paper algorithm)
+   * Builds similarity graph and finds connected components
+   */
+  private clusterSemantics(semanticIds: string[]): string[][] {
+    const CLUSTER_THRESHOLD = 0.66; // Similarity threshold for edge
+    const n = semanticIds.length;
+
+    if (n <= this.config.maxThemeSize) {
+      return [semanticIds];
+    }
+
+    // Get embeddings for all semantics
+    const embeddings: number[][] = [];
+    for (const id of semanticIds) {
+      const emb = this.semanticEmbCache.get(id);
+      if (emb) {
+        embeddings.push(emb);
+      } else {
+        // Fallback: use empty vector (will not connect)
+        embeddings.push([]);
+      }
+    }
+
+    // Build adjacency matrix based on similarity
+    const adj: boolean[][] = Array.from({ length: n }, () =>
+      Array(n).fill(false)
+    );
+
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        if (embeddings[i].length > 0 && embeddings[j].length > 0) {
+          const sim = cosineSim(embeddings[i], embeddings[j]);
+          if (sim >= CLUSTER_THRESHOLD) {
+            adj[i][j] = adj[j][i] = true;
+          }
+        }
+      }
+    }
+
+    // Find connected components using DFS
+    const visited = new Set<number>();
+    const clusters: string[][] = [];
+
+    for (let i = 0; i < n; i++) {
+      if (visited.has(i)) continue;
+
+      const component: number[] = [];
+      const stack = [i];
+
+      while (stack.length > 0) {
+        const node = stack.pop()!;
+        if (visited.has(node)) continue;
+        visited.add(node);
+        component.push(node);
+
+        for (let j = 0; j < n; j++) {
+          if (adj[node][j] && !visited.has(j)) {
+            stack.push(j);
+          }
+        }
+      }
+
+      clusters.push(component.map(idx => semanticIds[idx]));
+    }
+
+    // Fallback: if any cluster is still too large, force binary split
+    const result: string[][] = [];
+    for (const cluster of clusters) {
+      if (cluster.length > this.config.maxThemeSize) {
+        // Force split into two halves
+        const mid = Math.ceil(cluster.length / 2);
+        result.push(cluster.slice(0, mid));
+        result.push(cluster.slice(mid));
+      } else {
+        result.push(cluster);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Compute centroid for a cluster of semantic IDs
+   */
+  private computeClusterCentroid(semanticIds: string[]): number[] {
+    const embeddings: number[][] = [];
+
+    for (const id of semanticIds) {
+      const emb = this.semanticEmbCache.get(id);
+      if (emb && emb.length > 0) {
+        embeddings.push(emb);
+      }
+    }
+
+    return computeCentroid(embeddings);
   }
 
   private mergeSmallThemes(): void {
