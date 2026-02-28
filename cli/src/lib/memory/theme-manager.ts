@@ -188,6 +188,9 @@ export class ThemeManager {
     this.mergeSmallThemes();
     this.recomputeKnn();
     this.saveThemes();
+
+    // Clear semantic embedding cache to prevent memory leak (F2 fix)
+    this.semanticEmbCache.clear();
   }
 
   private attachSemantic(sem: SemanticMemory): void {
@@ -291,7 +294,6 @@ export class ThemeManager {
    * Builds similarity graph and finds connected components
    */
   private clusterSemantics(semanticIds: string[]): string[][] {
-    const CLUSTER_THRESHOLD = 0.66; // Similarity threshold for edge
     const n = semanticIds.length;
 
     if (n <= this.config.maxThemeSize) {
@@ -319,7 +321,7 @@ export class ThemeManager {
       for (let j = i + 1; j < n; j++) {
         if (embeddings[i].length > 0 && embeddings[j].length > 0) {
           const sim = cosineSim(embeddings[i], embeddings[j]);
-          if (sim >= CLUSTER_THRESHOLD) {
+          if (sim >= this.config.clusterThreshold) {
             adj[i][j] = adj[j][i] = true;
           }
         }
@@ -352,17 +354,21 @@ export class ThemeManager {
       clusters.push(component.map(idx => semanticIds[idx]));
     }
 
-    // Fallback: if any cluster is still too large, force binary split
+    // Fallback: recursively split any cluster still too large (F4 fix)
     const result: string[][] = [];
-    for (const cluster of clusters) {
-      if (cluster.length > this.config.maxThemeSize) {
-        // Force split into two halves
-        const mid = Math.ceil(cluster.length / 2);
-        result.push(cluster.slice(0, mid));
-        result.push(cluster.slice(mid));
-      } else {
+    const splitRecursively = (cluster: string[]): void => {
+      if (cluster.length <= this.config.maxThemeSize) {
         result.push(cluster);
+        return;
       }
+      // Binary split and recurse
+      const mid = Math.ceil(cluster.length / 2);
+      splitRecursively(cluster.slice(0, mid));
+      splitRecursively(cluster.slice(mid));
+    };
+
+    for (const cluster of clusters) {
+      splitRecursively(cluster);
     }
 
     return result;
@@ -403,10 +409,19 @@ export class ThemeManager {
         const combinedSize = t1.memberCount + t2.memberCount;
 
         if (sim >= this.config.mergeThreshold && combinedSize <= this.config.maxThemeSize) {
-          // Merge t2 into t1
+          // Merge t2 into t1 with weighted centroid average
+          const n1 = t1.memberCount;
+          const n2 = t2.memberCount;
+          const totalN = n1 + n2;
+
+          // Weighted centroid: c_merged = (c1 * n1 + c2 * n2) / (n1 + n2)
+          const mergedCentroid = t1.centroid.map((v, i) =>
+            (v * n1 + t2.centroid[i] * n2) / totalN
+          );
+
           t1.semanticIds.push(...t2.semanticIds);
           t1.memberCount = t1.semanticIds.length;
-          t1.centroid = computeCentroid([t1.centroid, t2.centroid]);
+          t1.centroid = mergedCentroid;
           t1.updatedAt = new Date();
 
           this.embeddings!.set(t1.themeId, t1.centroid);

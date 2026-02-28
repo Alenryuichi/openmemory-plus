@@ -60,6 +60,8 @@ export interface ThemeConfig {
   knnK: number;
   // Threshold for expanding search from theme to semantics
   expandThreshold: number;
+  // Similarity threshold for clustering semantics during split (F7 fix)
+  clusterThreshold: number;
 }
 
 export const DEFAULT_THEME_CONFIG: ThemeConfig = {
@@ -68,6 +70,7 @@ export const DEFAULT_THEME_CONFIG: ThemeConfig = {
   mergeThreshold: 0.78,
   knnK: 10,
   expandThreshold: 0.75,
+  clusterThreshold: 0.66,
 };
 
 // ============ Search Types ============

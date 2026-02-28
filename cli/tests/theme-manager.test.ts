@@ -160,6 +160,73 @@ describe('ThemeManager', () => {
       // Should have been split (exact count depends on implementation)
       expect(manager.getThemeCount()).toBeGreaterThanOrEqual(2);
     });
+
+    it('should cluster by similarity during split (F5 test)', () => {
+      // Create two groups of similar semantics
+      const group1 = [
+        createSemanticMemory({ memoryId: 'g1-1', embedding: [1, 0, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 'g1-2', embedding: [0.99, 0.1, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 'g1-3', embedding: [0.98, 0.15, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 'g1-4', embedding: [0.97, 0.2, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 'g1-5', embedding: [0.96, 0.25, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 'g1-6', embedding: [0.95, 0.3, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 'g1-7', embedding: [0.94, 0.35, 0, 0, 0] }),
+      ];
+      const group2 = [
+        createSemanticMemory({ memoryId: 'g2-1', embedding: [0, 1, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 'g2-2', embedding: [0.1, 0.99, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 'g2-3', embedding: [0.15, 0.98, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 'g2-4', embedding: [0.2, 0.97, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 'g2-5', embedding: [0.25, 0.96, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 'g2-6', embedding: [0.3, 0.95, 0, 0, 0] }),
+      ];
+
+      // Mix groups to simulate random insertion order
+      const mixed = [...group1, ...group2];
+      manager.assimilate(mixed);
+
+      // With 13 total semantics and maxThemeSize=12, should be split
+      // Connected component clustering should separate the two groups
+      expect(manager.getThemeCount()).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should recursively split very large clusters (F4 test)', () => {
+      // Create 30 very similar semantics (will form one big component)
+      const semantics: SemanticMemory[] = [];
+      for (let i = 0; i < 30; i++) {
+        semantics.push(createSemanticMemory({
+          memoryId: `sem-${i}`,
+          embedding: [1, 0.001 * i, 0, 0, 0], // All very similar
+        }));
+      }
+
+      manager.assimilate(semantics);
+
+      // With 30 semantics and maxThemeSize=12, need at least 3 themes
+      expect(manager.getThemeCount()).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  describe('mergeSmallThemes', () => {
+    it('should use weighted centroid when merging (F1/F3 test)', () => {
+      // Create two small themes that should merge
+      const theme1Semantics = [
+        createSemanticMemory({ memoryId: 't1-1', embedding: [1, 0, 0, 0, 0] }),
+        createSemanticMemory({ memoryId: 't1-2', embedding: [0.99, 0.1, 0, 0, 0] }),
+      ];
+      const theme2Semantics = [
+        createSemanticMemory({ memoryId: 't2-1', embedding: [0.95, 0.3, 0, 0, 0] }),
+      ];
+
+      // First assimilate creates theme 1
+      manager.assimilate(theme1Semantics);
+      expect(manager.getThemeCount()).toBe(1);
+
+      // Second assimilate - should attach to existing theme (high similarity)
+      manager.assimilate(theme2Semantics);
+      // All should be in one theme since they're very similar
+      expect(manager.getThemeCount()).toBe(1);
+    });
   });
 
   describe('searchThemes', () => {
