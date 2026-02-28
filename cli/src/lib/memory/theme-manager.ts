@@ -198,13 +198,17 @@ export class ThemeManager {
 
     if (bestTheme && bestSim >= this.config.attachThreshold) {
       // Attach to existing theme
+      const n = bestTheme.memberCount; // Count BEFORE adding
       bestTheme.semanticIds.push(sem.memoryId);
       bestTheme.memberCount = bestTheme.semanticIds.length;
       bestTheme.updatedAt = new Date();
 
-      // Update centroid incrementally
-      const embeddings = [bestTheme.centroid, sem.embedding];
-      bestTheme.centroid = computeCentroid(embeddings);
+      // Online centroid update (xMemory paper formula):
+      // c_new = (c_old * n + v_new) / (n + 1)
+      const newCentroid = bestTheme.centroid.map((v, i) =>
+        (v * n + sem.embedding[i]) / (n + 1)
+      );
+      bestTheme.centroid = newCentroid;
       this.embeddings!.set(bestTheme.themeId, bestTheme.centroid);
     } else {
       // Create new theme
