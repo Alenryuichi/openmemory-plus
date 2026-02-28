@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>双层记忆架构 · 智能分类 · 自动提取 · 多 IDE 支持</strong>
+  <strong>xMemory 四层记忆架构 · 智能分类 · 自动提取 · 多 IDE 支持</strong>
 </p>
 
 <p align="center">
@@ -43,7 +43,12 @@
 >
 > **OpenMemory Plus 让所有 AI Agent 共享同一份记忆。**
 
-**OpenMemory Plus** 是一个为 AI Agent 设计的统一记忆管理框架，整合项目级 (`_omp/memory/`) 和用户级 (`openmemory` MCP) 双层记忆系统。
+**OpenMemory Plus** 是一个为 AI Agent 设计的统一记忆管理框架，采用 **xMemory 四层记忆架构**：
+
+- **L3 Theme** — 主题聚类层，自动归纳高层概念
+- **L2 Semantic** — 语义记忆层，基于 BGE-M3 向量检索
+- **L1 Episode** — 情节记忆层，保存对话上下文
+- **L0 Message** — 原始消息层
 
 ```bash
 # 5 分钟安装，终结 AI 失忆症
@@ -367,11 +372,12 @@ omp deps down      # 停止服务
 
 ### 核心能力
 
-- 🔄 **双层记忆架构** — 项目级 + 用户级分离存储，各司其职
+- 🧠 **xMemory 四层架构** — L3 Theme → L2 Semantic → L1 Episode → L0 Message
 - 🎯 **智能分类** — 自动判断信息应存储在项目还是用户记忆
-- 🔍 **语义搜索** — 基于 BGE-M3 的多语言向量检索
+- 🔍 **语义搜索** — 基于 BGE-M3 的多语言向量检索 + 主题层聚类
 - ⚡ **事件驱动提取** — 对话结束时自动触发记忆提取 Skill
 - 🔐 **敏感信息过滤** — 自动识别并阻止存储 API Key、密码等
+- 🎯 **Top-down 检索** — 从主题层开始，自适应展开到语义层
 
 ### 🤖 多 LLM 支持 <sup>NEW</sup>
 
@@ -407,6 +413,39 @@ omp deps down      # 停止服务
 
 ## 🏗️ 架构
 
+### xMemory 四层记忆架构
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 xMemory 4-Layer Architecture                │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  L3 Theme (主题层)                                   │   │
+│  │  ├── 自动聚类相似语义记忆                            │   │
+│  │  ├── 主题吸附 (attachThreshold: 0.62)               │   │
+│  │  ├── 主题分裂 (maxThemeSize: 12)                    │   │
+│  │  └── 主题合并 (mergeThreshold: 0.78)                │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                            ↑                                │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  L2 Semantic (语义层) - Qdrant 向量数据库           │   │
+│  │  └── BGE-M3 多语言 Embedding                        │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                            ↑                                │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  L1 Episode (情节层) - 对话上下文                   │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                            ↑                                │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  L0 Message (消息层) - 原始对话                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 存储分层
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    OpenMemory Plus                          │
@@ -428,8 +467,9 @@ omp deps down      # 停止服务
 │  │ _omp/memory/   │              │   openmemory    │      │
 │  │   (项目级)      │              │   (用户级)      │      │
 │  ├─────────────────┤              ├─────────────────┤      │
-│  │ • project.yaml  │              │ • 向量数据库    │      │
-│  │ • decisions.yaml│              │ • 语义搜索      │      │
+│  │ • project.yaml  │              │ • L3 主题层     │      │
+│  │ • decisions.yaml│              │ • L2 语义层     │      │
+│  │ • themes/       │              │ • L1 情节层     │      │
 │  │ • Git 版本控制  │              │ • MCP 协议      │      │
 │  └─────────────────┘              └─────────────────┘      │
 │                                                             │
@@ -438,12 +478,21 @@ omp deps down      # 停止服务
 
 ### 分类规则
 
-| 信息类型 | 存储位置 | 示例 |
-|----------|----------|------|
-| 项目配置 | `_omp/memory/*.md` | 部署 URL、环境变量、路径 |
-| 技术决策 | `_omp/memory/techContext.md` | 框架选择、架构设计 |
-| 用户偏好 | `openmemory` (MCP) | 语言偏好、代码风格 |
-| 用户技能 | `openmemory` (MCP) | 熟悉的技术栈、经验 |
+| 信息类型 | 存储位置 | 层级 | 示例 |
+|----------|----------|------|------|
+| 项目配置 | `_omp/memory/*.md` | - | 部署 URL、环境变量、路径 |
+| 技术决策 | `_omp/memory/techContext.md` | - | 框架选择、架构设计 |
+| 主题聚类 | `_omp/memory/themes/` | L3 | 自动生成的主题索引 |
+| 用户偏好 | `openmemory` (MCP) | L2 | 语言偏好、代码风格 |
+| 用户技能 | `openmemory` (MCP) | L2 | 熟悉的技术栈、经验 |
+
+### xMemory 检索流程
+
+```
+查询输入 → L3 主题层匹配 → 分数 > 0.75? → 展开到 L2 语义层 → 返回结果
+                ↓                   ↓
+           KNN 邻居搜索        直接返回主题
+```
 
 > 💡 **注意**: 安装后，项目级记忆存储在 `_omp/memory/` 目录下，该目录会被添加到 Git 版本控制。
 
@@ -562,12 +611,15 @@ npx openmemory-plus doctor --fix
 |------|------|
 | `/memory` | 显示快速状态 + 子命令菜单 |
 | `/mem status` | 详细记忆状态 |
-| `/mem search {query}` | 语义搜索记忆 |
+| `/mem search {query}` | 语义搜索记忆 (默认 L2 语义层) |
+| `/mem search {query} --level theme` | 🆕 主题层搜索 (L3) |
+| `/mem search {query} --level theme --no-expand` | 🆕 仅主题层，不展开 |
 | `/mem store` | 手动存储记忆 |
 | `/mem sync` | 检测并解决冲突 |
 | `/mem clean` | 清理 ROT 记忆 |
 | `/mem decay` | 时间衰减分析 |
 | `/mem graph` | 知识图谱可视化 |
+| `/mem themes` | 🆕 查看主题聚类状态 |
 
 ---
 
@@ -822,11 +874,19 @@ npx openmemory-plus install
 
 👉 **[查看完整 Roadmap Issues](https://github.com/Alenryuichi/openmemory-plus/issues?q=is%3Aissue+is%3Aopen+label%3A%22roadmap%3A+now%22%2C%22roadmap%3A+next%22%2C%22roadmap%3A+later%22)**
 
-### ✅ Done (v1.5)
+### ✅ Done (v1.6)
 
 <details>
 <summary>已完成功能</summary>
 
+**v1.6 - xMemory 四层架构**
+- [x] 🧠 xMemory 四层架构 (L3 Theme → L2 Semantic → L1 Episode → L0 Message)
+- [x] 🎯 L3 主题层自动聚类 (吸附/分裂/合并算法)
+- [x] 🔍 Top-down 自适应检索 (`--level theme`)
+- [x] ⚡ 主题搜索 CLI 选项 (`--no-expand`)
+- [x] 📊 连通分量聚类算法 (xMemory 论文实现)
+
+**v1.5 - 基础功能**
 - [x] 双层记忆架构 (项目级 + 用户级)
 - [x] 智能分类路由
 - [x] 多 IDE 支持 (Augment, Claude, Cursor, Gemini)

@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>Dual-Layer Memory · Smart Classification · Auto-Extraction · Multi-IDE Support</strong>
+  <strong>xMemory 4-Layer Architecture · Smart Classification · Auto-Extraction · Multi-IDE Support</strong>
 </p>
 
 <p align="center">
@@ -37,7 +37,12 @@
 
 ## 🎯 Introduction
 
-**OpenMemory Plus** is a unified memory management framework for AI Agents, integrating project-level (`_omp/memory/`) and user-level (`openmemory` MCP) dual-layer memory systems.
+**OpenMemory Plus** is a unified memory management framework for AI Agents, featuring **xMemory 4-Layer Architecture**:
+
+- **L3 Theme** — Theme clustering layer, auto-aggregates high-level concepts
+- **L2 Semantic** — Semantic memory layer, BGE-M3 vector retrieval
+- **L1 Episode** — Episodic memory layer, conversation context
+- **L0 Message** — Raw message layer
 
 > **Give any AI Agent persistent memory in 5 minutes.**
 
