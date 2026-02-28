@@ -1,9 +1,9 @@
 ---
 name: memory-extraction
-description: Agent-only workflow for extracting key information from conversations, code changes, and deployments into structured memory files. Automatically updates `_omp/memory/` directory and notifies other agents. Triggered automatically at conversation end or when valuable information is detected.
+description: Agent-only workflow for extracting key information from conversations, code changes, and deployments into structured memory files. Supports xMemory 4-layer architecture with theme assimilation. Automatically updates `_omp/memory/` directory and notifies other agents.
 metadata:
   author: Wendy (Workflow Builder)
-  version: "2.1"
+  version: "3.0"
   language: zh-CN
   audience: agent-only
 ---
@@ -34,18 +34,30 @@ _omp/                           # OpenMemory Plus 核心目录
 │       ├── SKILL.md
 │       ├── scripts/validate.sh
 │       └── templates/*.tmpl
-└── memory/                    # 项目级记忆
+└── memory/                     # 项目级记忆
     ├── project.yaml            # 项目配置 (SSOT)
     ├── decisions.yaml          # 技术决策记录
     ├── changelog.yaml          # 变更历史
-    └── sessions/               # 会话记录
+    ├── sessions/               # 会话记录 (L1 Episode)
+    └── themes/                 # 主题层 (L3 Theme) ← NEW
+        ├── index.yaml          # 主题索引和配置
+        └── embeddings.json     # 主题质心向量
 ```
 
-## 双层记忆架构
+## xMemory 4-Layer Architecture
+
+| 层级 | 存储位置 | 用途 |
+|------|----------|------|
+| **L3 Theme** | `_omp/memory/themes/` | 主题聚合，多个语义记忆的抽象 |
+| **L2 Semantic** | openmemory MCP (Qdrant) | 语义记忆，可检索的知识片段 |
+| **L1 Episode** | `_omp/memory/sessions/` | 情节记忆，会话上下文 |
+| **L0 Message** | 对话历史 | 原始消息（不持久化） |
+
+## 双层记忆架构（简化视图）
 
 | 系统 | 存储位置 | 用途 |
 |------|----------|------|
-| 项目级 | `_omp/memory/` | 项目配置、技术决策、变更记录 |
+| 项目级 | `_omp/memory/` | 项目配置、技术决策、变更记录、主题 |
 | 用户级 | `openmemory` MCP | 用户偏好、技能、跨项目上下文 |
 
 ## 分类规则
@@ -110,13 +122,29 @@ _omp/                           # OpenMemory Plus 核心目录
 
 ---
 
-## 🔄 自动化流程
+## 🔄 自动化流程 (xMemory Enhanced)
 
 ```
-对话/操作 → 信息检测 → 分类 → 提取 → 存储 → 通知
-     ↓           ↓        ↓       ↓       ↓       ↓
-  输入源      触发判断   类型识别  结构化  写入YAML  更新Agent
+对话/操作 → 信息检测 → 分类 → 提取 → 存储 → 主题吸附 → 通知
+     ↓           ↓        ↓       ↓       ↓        ↓          ↓
+  输入源      触发判断   类型识别  结构化  L2语义  L3主题聚合  更新Agent
 ```
+
+### xMemory 主题吸附 (L3 Assimilation)
+
+当新的语义记忆存入 L2 层后，自动触发主题吸附：
+
+```bash
+# 主题吸附流程
+1. 计算新记忆的 embedding
+2. 与现有主题 centroids 计算余弦相似度
+3. 相似度 >= 0.62 (attachThreshold): 吸附到现有主题
+4. 相似度 < 0.62: 创建新主题
+5. 主题语义数 > 10: 触发主题分裂
+6. 两主题相似度 > 0.78: 触发主题合并
+```
+
+**配置位置**: `_omp/memory/themes/index.yaml`
 
 ### Phase 1: 信息检测
 
@@ -470,6 +498,7 @@ pending_memories:
 
 | 版本 | 变更 |
 |------|------|
+| v3.0 | xMemory 4 层架构：添加 L3 主题层、主题吸附流程、themes/ 目录 |
 | v2.1 | 目录重构：_omp/ 统一目录，移除 rules/，分类规则内嵌 |
 | v2.0 | 双层记忆架构：整合 openmemory MCP，智能分类路由 |
 | v1.1 | 添加错误处理、Schema 验证、模板文件、触发条件详解 |

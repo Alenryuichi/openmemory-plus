@@ -1,6 +1,6 @@
 ---
 name: search
-description: 在项目级和用户级记忆中进行语义搜索
+description: 在项目级和用户级记忆中进行语义搜索（支持 xMemory 多层架构）
 ---
 
 # Step: 搜索记忆
@@ -9,7 +9,18 @@ description: 在项目级和用户级记忆中进行语义搜索
 
 - ✅ Get search query from user if not provided
 - ✅ Search both project and user memory
+- ✅ Support xMemory layer selection (theme/semantic/all)
 - ✅ Display results with relevance scores
+
+---
+
+## xMemory Layers
+
+| 层级 | CLI 选项 | 描述 |
+|------|----------|------|
+| L3 Theme | `--level theme` | 搜索主题层（聚合） |
+| L2 Semantic | `--level semantic` | 搜索语义层（默认） |
+| All | `--level all` | 自适应检索（L3→L2→L1） |
 
 ---
 
@@ -19,15 +30,30 @@ description: 在项目级和用户级记忆中进行语义搜索
 
 If user provided query in their command, use it directly.
 Otherwise ask:
-> "请输入搜索关键词："
+> "请输入搜索关键词（可选：指定层级 theme/semantic/all）："
 
-### 2. Search User Memory
+### 2. Determine Search Level
 
-Call `search_memory_openmemory` with the query:
-- Get matching memories with scores
-- Sort by relevance
+根据用户输入或显式参数确定搜索层级：
+- 默认: `semantic` (L2 语义层)
+- 用户说 "主题/theme": `theme` (L3 主题层)
+- 用户说 "全部/all": `all` (自适应)
 
-### 3. Search Project Memory
+### 3. Search User Memory
+
+**L2 Semantic (默认):**
+```bash
+# 使用 openmemory MCP
+search_memory_openmemory(query="{query}")
+```
+
+**L3 Theme (xMemory):**
+```bash
+omp search "{query}" --level theme
+# 不展开: omp search "{query}" --level theme --no-expand
+```
+
+### 4. Search Project Memory
 
 Search `_omp/memory/*.md` and `_omp/memory/*.yaml` files:
 - Grep for query keywords

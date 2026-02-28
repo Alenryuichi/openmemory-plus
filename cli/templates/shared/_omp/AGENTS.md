@@ -8,20 +8,36 @@ This file provides complete instructions for AI agents to use the dual-layer mem
 - View project memory: `cat _omp/memory/*.md`
 - Check workflows: `ls _omp/workflows/memory/`
 
-## Memory Architecture
+## Memory Architecture (xMemory 4-Layer)
 
 ```
-├── _omp/memory/           ← Project-level memory (this repo)
-│   ├── projectbrief.md    ← Project overview & goals
-│   ├── productContext.md  ← Product requirements & features
-│   ├── techContext.md     ← Technical stack & architecture
-│   ├── activeContext.md   ← Current work session context
-│   ├── systemPatterns.md  ← Patterns & conventions
-│   ├── decisions.yaml     ← Architecture decisions log
-│   └── progress.md        ← Task progress tracking
+├── _omp/memory/             ← Project-level memory (this repo)
+│   ├── projectbrief.md      ← Project overview & goals
+│   ├── productContext.md    ← Product requirements & features
+│   ├── techContext.md       ← Technical stack & architecture
+│   ├── activeContext.md     ← Current work session context
+│   ├── systemPatterns.md    ← Patterns & conventions
+│   ├── decisions.yaml       ← Architecture decisions log
+│   ├── progress.md          ← Task progress tracking
+│   ├── sessions/            ← L1 Episode memories
+│   └── themes/              ← L3 Theme layer (NEW)
+│       ├── index.yaml       ← Theme index & config
+│       └── embeddings.json  ← Theme centroids
 │
-└── OpenMemory MCP         ← User-level memory (personal prefs)
+├── OpenMemory MCP           ← L2 Semantic layer (Qdrant)
+│   └── User preferences, skills, cross-project memories
+│
+└── L0 Message Layer         ← Raw conversation (not persisted)
 ```
+
+### xMemory Layer Summary
+
+| Layer | Storage | Purpose |
+|-------|---------|---------|
+| L3 Theme | `themes/` | Aggregated topics from semantics |
+| L2 Semantic | OpenMemory MCP | Searchable knowledge fragments |
+| L1 Episode | `sessions/` | Conversation context |
+| L0 Message | In-memory | Raw messages (transient) |
 
 ## Trigger Signals for Auto-Extraction
 

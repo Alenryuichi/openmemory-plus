@@ -1,7 +1,7 @@
 ---
 name: memory
-description: 记忆管理工作流 - 统一管理项目级和用户级记忆
-version: "2.0"
+description: 记忆管理工作流 - 统一管理项目级和用户级记忆（含 xMemory 4 层架构）
+version: "3.0"
 ---
 
 # Memory Management Workflow
@@ -31,14 +31,19 @@ This uses **micro-file architecture** with **menu-driven routing**:
 - `memory_folder` = `{project-root}/_omp/memory`
 - `steps_path` = `{installed_path}/steps`
 
-### ⚠️ DUAL-LAYER STORAGE RULE
+### ⚠️ xMemory 4-LAYER ARCHITECTURE
 
-**CRITICAL: This system has TWO storage layers. You MUST use BOTH appropriately!**
+**CRITICAL: This system uses xMemory 4-layer hierarchical memory architecture!**
 
 | Layer | Storage | What to Store |
 |-------|---------|---------------|
-| **项目级** | `_omp/memory/*.md` files | Project config, tech stack, decisions, URLs, paths |
-| **用户级** | openmemory MCP | User preferences, skills, cross-project habits |
+| **L3 Theme** | `_omp/memory/themes/` | 聚合主题，多个语义记忆的抽象 |
+| **L2 Semantic** | openmemory MCP (Qdrant) | 语义记忆，可检索的知识片段 |
+| **L1 Episode** | `_omp/memory/sessions/` | 情节记忆，会话上下文 |
+| **L0 Message** | 对话历史 | 原始消息（不持久化） |
+
+**项目级文件** (`_omp/memory/*.md`): 项目配置、技术栈、决策、URL、路径
+**用户级记忆** (openmemory MCP): 用户偏好、技能、跨项目习惯
 
 **DO NOT store everything to openmemory! Project-specific info MUST go to `_omp/memory/` files!**
 
@@ -95,6 +100,7 @@ This uses **micro-file architecture** with **menu-driven routing**:
 [7] 🔗 知识图谱    查看实体关系
 [8] 📦 记忆整合    合并碎片化记忆
 [9] 📊 质量指标    查看记忆健康度和指标
+[10] 🎯 主题检索   搜索 L3 主题层（xMemory）
 
 [M] 返回菜单  [X] 退出
 
@@ -122,6 +128,7 @@ Based on user input, load the corresponding step file:
 | `7` | 图谱, 关系, graph, relation | `./steps/graph.md` |
 | `8` | 整合, 合并, consolidate, merge | `./steps/consolidate.md` |
 | `9` | 指标, 质量, metrics, health | `./steps/metrics.md` |
+| `10` | 主题, theme, L3, xmemory | `./steps/themes.md` |
 | `M` | 菜单, menu | Re-display menu |
 | `X` | 退出, exit, quit | Exit workflow |
 
