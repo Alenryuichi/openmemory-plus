@@ -2,11 +2,87 @@
  * OpenMemory Plus - xMemory Hierarchical Types
  * Based on xMemory paper: 4-level memory architecture
  * L3: Themes, L2: Semantics, L1: Episodes, L0: Messages
+ *
+ * Extended for Multi-Agent Team Support (v2.0):
+ * - Agent identity and scoped memory
+ * - Team shared memory
+ * - Handoff protocol
  */
 
 // ============ Memory Level Enum ============
 
 export type MemoryLevel = 'L0' | 'L1' | 'L2' | 'L3';
+
+// ============ Memory Scope (Multi-Agent) ============
+
+export type MemoryScope = 'team' | 'agent';
+
+// ============ Agent Definition ============
+
+export interface AgentDefinition {
+  id: string; // Unique agent identifier (e.g., 'tech-lead', 'dev-bot')
+  role: AgentRole;
+  name?: string; // Human-readable name
+  channels?: string[]; // Communication channels (e.g., ['feishu', 'discord'])
+  description?: string;
+}
+
+export type AgentRole =
+  | 'coordinator' // Main orchestrator (e.g., 'main')
+  | 'architect' // Technical lead
+  | 'developer' // Dev agent
+  | 'algorithm' // Algo specialist
+  | 'operations' // DevOps
+  | 'researcher' // Research agent
+  | 'writer' // Documentation
+  | 'reviewer' // Code review
+  | 'custom'; // User-defined role
+
+// ============ Team Configuration ============
+
+export interface TeamConfig {
+  name: string; // Team name (e.g., 'openclaw')
+  runId: string; // Project/run identifier for memory partitioning
+  agents: AgentDefinition[];
+  memory: TeamMemoryConfig;
+}
+
+export interface TeamMemoryConfig {
+  teamSharedPath: string; // Path to team shared memory (e.g., '_omp/memory/')
+  agentScopesPath: string; // Path template for agent scopes (e.g., '_omp/agents/{agent_id}/memory/')
+  handoffsPath: string; // Path to handoff records (e.g., '_omp/memory/handoffs/')
+}
+
+export const DEFAULT_TEAM_MEMORY_CONFIG: TeamMemoryConfig = {
+  teamSharedPath: '_omp/memory/',
+  agentScopesPath: '_omp/agents/{agent_id}/memory/',
+  handoffsPath: '_omp/memory/handoffs/',
+};
+
+// ============ Actor Attribution ============
+
+export interface ActorAttribution {
+  actorId: string; // Agent ID or 'user:{username}'
+  actorType: 'agent' | 'user';
+  timestamp: Date;
+}
+
+// ============ Handoff Record ============
+
+export interface HandoffRecord {
+  handoffId: string;
+  fromAgent: string;
+  toAgent: string;
+  timestamp: Date;
+  status: HandoffStatus;
+  context: string; // Summary of work done
+  progress: number; // 0-100 percentage
+  artifacts?: string[]; // Related file paths
+  acceptedAt?: Date;
+  notes?: string;
+}
+
+export type HandoffStatus = 'pending' | 'accepted' | 'rejected' | 'completed';
 
 // ============ Theme Node (L3) ============
 
@@ -19,6 +95,9 @@ export interface ThemeNode {
   memberCount: number;
   createdAt: Date;
   updatedAt: Date;
+  // Multi-Agent Support (v2.0)
+  scope?: MemoryScope; // 'team' (shared) or 'agent' (private)
+  agentId?: string; // Owner agent ID (if scope='agent')
 }
 
 // ============ Semantic Memory (L2) ============
@@ -32,6 +111,12 @@ export interface SemanticMemory {
   importance: number; // 0-1 score
   createdAt: Date;
   lastAccessedAt: Date;
+  // Multi-Agent Support (v2.0)
+  scope?: MemoryScope; // 'team' (shared) or 'agent' (private)
+  agentId?: string; // Owner agent ID (if scope='agent')
+  actor?: ActorAttribution; // Who created this memory
+  categories?: string[]; // Memory categories (e.g., ['decision', 'architecture'])
+  runId?: string; // Project/team run ID for partitioning
 }
 
 // ============ Episode Memory (L1) ============
@@ -45,6 +130,9 @@ export interface EpisodeMemory {
   timestamp: Date;
   duration?: number; // Seconds
   metadata?: Record<string, unknown>;
+  // Multi-Agent Support (v2.0)
+  agentId?: string; // Agent that created this episode
+  actor?: ActorAttribution; // Actor attribution
 }
 
 // ============ Theme Configuration ============
@@ -81,6 +169,11 @@ export interface AdaptiveSearchOptions {
   maxTokenBudget: number;
   expandToSemantics: boolean;
   expandToEpisodes: boolean;
+  // Multi-Agent Support (v2.0)
+  scope?: MemoryScope; // Filter by scope ('team' or 'agent')
+  agentId?: string; // Filter by agent ID (required if scope='agent')
+  includeTeamMemory?: boolean; // Include team shared memory in agent search (default: true)
+  runId?: string; // Filter by run/project ID
 }
 
 export const DEFAULT_SEARCH_OPTIONS: AdaptiveSearchOptions = {
@@ -89,6 +182,7 @@ export const DEFAULT_SEARCH_OPTIONS: AdaptiveSearchOptions = {
   maxTokenBudget: 4000,
   expandToSemantics: true,
   expandToEpisodes: false,
+  includeTeamMemory: true,
 };
 
 export interface SearchResult {
@@ -100,6 +194,10 @@ export interface SearchResult {
     themeId?: string;
     themeSummary?: string;
     episodeTitle?: string;
+    // Multi-Agent Support (v2.0)
+    scope?: MemoryScope;
+    agentId?: string;
+    actor?: ActorAttribution;
   };
 }
 

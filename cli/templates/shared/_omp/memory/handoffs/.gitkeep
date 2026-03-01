@@ -1,0 +1,6 @@
+# Handoff Records Directory
+# This directory stores agent-to-agent handoff records
+# Format: handoff-{timestamp}-{id}.yaml
+#
+# See _omp/workflows/handoff/workflow.md for handoff protocol
+

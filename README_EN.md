@@ -695,7 +695,21 @@ The wizard will:
 
 ## 🗺️ Roadmap
 
-### v1.5 (Current)
+### v2.0 (Current) - Multi-Agent Team Support
+- [x] 🤝 Multi-Agent team memory architecture (Team Shared + Agent Private)
+- [x] 🎭 Agent ID Schema (actor attribution, scope filtering)
+- [x] 📋 Team configuration file (`_omp/config.yaml`)
+- [x] 🔄 Handoff workflow (agent-to-agent task transfer protocol)
+- [x] 📁 Scoped Memory API (dual-layer scoped memory)
+
+### v1.6 - xMemory 4-Layer Architecture
+- [x] 🧠 xMemory 4-layer architecture (L3 Theme → L2 Semantic → L1 Episode → L0 Message)
+- [x] 🎯 L3 theme layer auto-clustering (attach/split/merge algorithms)
+- [x] 🔍 Top-down adaptive retrieval (`--level theme`)
+- [x] ⚡ Theme search CLI options (`--no-expand`)
+- [x] 📊 Connected component clustering (xMemory paper implementation)
+
+### v1.5 - Foundation
 - [x] Dual-layer memory architecture
 - [x] Smart classification routing
 - [x] Multi-IDE support (Augment, Claude, Cursor, Gemini)
@@ -706,18 +720,11 @@ The wizard will:
 - [x] Progressive config (append to existing files)
 - [x] MCP auto-configuration and verification
 
-### v2.0 (Planned)
-- [ ] Web UI management interface
-- [ ] Team memory sharing
-- [ ] Memory import/export
-- [ ] Custom classification rules
-- [ ] More IDE support (Windsurf, Cline)
-
 ### v3.0 (Future)
+- [ ] Web UI management interface
 - [ ] Cloud sync option
 - [ ] Memory analytics and insights
 - [ ] AI-driven memory organization
-- [ ] Enterprise features
 
 ---
 

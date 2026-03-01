@@ -110,6 +110,44 @@ Memory extraction skill: `_omp/skills/memory-extraction/`
 - Extracts key information from the session
 - Updates appropriate memory files
 
+## Multi-Agent Team Support (v2.0)
+
+For teams with multiple agents, configure `_omp/config.yaml`:
+
+### Memory Scopes
+
+| Scope | Path | Visibility |
+|-------|------|------------|
+| **Team** | `_omp/memory/` | All agents |
+| **Agent** | `_omp/agents/{id}/memory/` | Single agent only |
+
+### Agent Roles
+
+| Role | Responsibility |
+|------|----------------|
+| `coordinator` | Main orchestrator |
+| `architect` | Technical decisions |
+| `developer` | Code implementation |
+| `algorithm` | Algorithm design |
+| `operations` | DevOps & infra |
+
+### Handoff Protocol
+
+When passing work to another agent:
+
+1. **Create Handoff** → Document context, progress, artifacts
+2. **Accept/Reject** → Target agent reviews and accepts
+3. **Complete** → Mark handoff as done with notes
+
+Handoff records stored in: `_omp/memory/handoffs/`
+
+### Actor Attribution
+
+Every memory entry includes:
+- `actorId`: Who created it (e.g., `tech-lead`, `user:alice`)
+- `actorType`: `agent` or `user`
+- `timestamp`: When created
+
 ## Verification
 
 After any memory operation, verify:

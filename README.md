@@ -868,16 +868,22 @@ npx openmemory-plus install
 ### 💡 Later (未来考虑)
 
 - [ ] Web UI 管理界面
-- [ ] 团队记忆共享 (可选)
 - [ ] 云端同步选项
 - [ ] 记忆分析和洞察
 
 👉 **[查看完整 Roadmap Issues](https://github.com/Alenryuichi/openmemory-plus/issues?q=is%3Aissue+is%3Aopen+label%3A%22roadmap%3A+now%22%2C%22roadmap%3A+next%22%2C%22roadmap%3A+later%22)**
 
-### ✅ Done (v1.6)
+### ✅ Done (v2.0)
 
 <details>
 <summary>已完成功能</summary>
+
+**v2.0 - Multi-Agent Team Support**
+- [x] 🤝 多 Agent 团队记忆架构 (Team Shared + Agent Private)
+- [x] 🎭 Agent ID Schema (actor attribution, scope filtering)
+- [x] 📋 团队配置文件 (`_omp/config.yaml`)
+- [x] 🔄 Handoff 工作流 (Agent 间任务交接协议)
+- [x] 📁 Scoped Memory API (双层作用域记忆)
 
 **v1.6 - xMemory 四层架构**
 - [x] 🧠 xMemory 四层架构 (L3 Theme → L2 Semantic → L1 Episode → L0 Message)

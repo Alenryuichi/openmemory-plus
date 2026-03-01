@@ -1,0 +1,116 @@
+# OpenMemory Plus Team Configuration
+# This file configures multi-agent team memory support
+# Documentation: https://github.com/openmemory-plus/docs/team-config
+
+version: "2.0"
+
+# ============ Team Configuration ============
+# Uncomment and customize for multi-agent team setup
+
+# team:
+#   name: "my-team"           # Team identifier
+#   runId: "project-alpha"    # Project/run ID for memory partitioning
+#   
+#   # Agent definitions
+#   agents:
+#     - id: "main"
+#       role: "coordinator"
+#       name: "Main Agent"
+#       channels: ["feishu"]
+#       description: "Main orchestrator and user interface"
+#
+#     - id: "tech-lead"
+#       role: "architect"
+#       name: "Tech Lead"
+#       channels: ["feishu", "discord"]
+#       description: "Technical decisions and architecture"
+#
+#     - id: "dev-bot"
+#       role: "developer"
+#       name: "Dev Bot"
+#       channels: ["discord"]
+#       description: "Code implementation"
+#
+#     - id: "algo-bot"
+#       role: "algorithm"
+#       name: "Algorithm Bot"
+#       channels: ["discord"]
+#       description: "Algorithm design and optimization"
+#
+#     - id: "devops-bot"
+#       role: "operations"
+#       name: "DevOps Bot"
+#       channels: ["discord"]
+#       description: "Infrastructure and deployment"
+
+# ============ Memory Configuration ============
+
+memory:
+  # Team shared memory path (relative to _omp/)
+  teamSharedPath: "memory/"
+  
+  # Agent-specific memory path template
+  # {agent_id} will be replaced with the actual agent ID
+  agentScopesPath: "agents/{agent_id}/memory/"
+  
+  # Handoff records path
+  handoffsPath: "memory/handoffs/"
+
+# ============ Agent Roles ============
+# Available roles:
+#   - coordinator: Main orchestrator (e.g., 'main')
+#   - architect: Technical lead, architecture decisions
+#   - developer: Code implementation
+#   - algorithm: Algorithm specialist
+#   - operations: DevOps, infrastructure
+#   - researcher: Research and analysis
+#   - writer: Documentation
+#   - reviewer: Code review
+#   - custom: User-defined role
+
+# ============ Memory Scopes ============
+# Scope determines memory visibility:
+#   - team: Visible to all agents (e.g., architecture decisions)
+#   - agent: Private to specific agent (e.g., work progress)
+#
+# When searching, agents see:
+#   1. Their own agent-scoped memories
+#   2. Team-scoped memories (if includeTeamMemory=true)
+
+# ============ Handoff Protocol ============
+# When an agent needs to pass work to another:
+#
+# 1. Source agent creates handoff:
+#    - Context: What was accomplished
+#    - Progress: Completion percentage
+#    - Artifacts: Related files
+#
+# 2. Target agent accepts/rejects:
+#    - On accept: Takes over the work
+#    - On reject: Returns to source
+#
+# 3. Completion:
+#    - Target agent marks complete
+#    - Notes any follow-ups
+
+# ============ Example: OpenClaw Team ============
+# team:
+#   name: "openclaw"
+#   runId: "openclaw-v1"
+#   agents:
+#     - id: "main"
+#       role: "coordinator"
+#       channels: ["feishu"]
+#     - id: "tech-lead"
+#       role: "architect"
+#       channels: ["feishu", "discord"]
+#     - id: "dev-bot"
+#       role: "developer"
+#       channels: ["discord"]
+#     - id: "algo-bot"
+#       role: "algorithm"
+#       channels: ["discord"]
+#     - id: "devops-bot"
+#       role: "operations"
+#       channels: ["discord"]
+
