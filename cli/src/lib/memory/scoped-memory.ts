@@ -8,6 +8,8 @@
  * - Handoff records: _omp/memory/handoffs/
  */
 
+import { randomUUID } from 'crypto';
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as YAML from 'yaml';
 import {
@@ -18,9 +20,6 @@ import {
   DEFAULT_TEAM_MEMORY_CONFIG,
   ActorAttribution,
   HandoffRecord,
-  HandoffStatus,
-  SemanticMemory,
-  ThemeNode,
 } from './xmemory-types.js';
 import { FileSystem, nodeFs, ensureDir } from './filesystem.js';
 
@@ -167,6 +166,8 @@ export class ScopedMemoryManager {
 
   /**
    * Create a handoff record
+   * @throws Error if fromAgent or toAgent not registered (when teamConfig exists)
+   * @throws Error if progress is not in 0-100 range
    */
   createHandoff(
     fromAgent: string,
@@ -175,7 +176,22 @@ export class ScopedMemoryManager {
     progress: number,
     artifacts?: string[]
   ): HandoffRecord {
-    const handoffId = `handoff-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    // Validate agents if team config exists
+    if (this.teamConfig) {
+      if (!this.hasAgent(fromAgent)) {
+        throw new Error(`Unknown source agent: ${fromAgent}`);
+      }
+      if (!this.hasAgent(toAgent)) {
+        throw new Error(`Unknown target agent: ${toAgent}`);
+      }
+    }
+
+    // Validate progress range
+    if (progress < 0 || progress > 100) {
+      throw new Error(`Progress must be 0-100, got: ${progress}`);
+    }
+
+    const handoffId = `handoff-${Date.now()}-${randomUUID().slice(0, 8)}`;
     const record: HandoffRecord = {
       handoffId,
       fromAgent,
@@ -236,7 +252,7 @@ export class ScopedMemoryManager {
   }
 
   /**
-   * Load handoff record from file
+   * Load handoff record from file with proper Date parsing
    */
   private loadHandoff(handoffId: string): HandoffRecord | null {
     const filepath = path.join(this.getHandoffsPath(), `${handoffId}.yaml`);
@@ -246,14 +262,21 @@ export class ScopedMemoryManager {
 
     try {
       const content = this.fs.readFileSync(filepath, 'utf-8');
-      return YAML.parse(content) as HandoffRecord;
+      const parsed = YAML.parse(content) as Record<string, unknown>;
+
+      // Convert date strings back to Date objects
+      return {
+        ...parsed,
+        timestamp: new Date(parsed.timestamp as string),
+        acceptedAt: parsed.acceptedAt ? new Date(parsed.acceptedAt as string) : undefined,
+      } as HandoffRecord;
     } catch {
       return null;
     }
   }
 
   /**
-   * List pending handoffs for an agent
+   * List pending handoffs for a target agent
    */
   listPendingHandoffs(agentId: string): HandoffRecord[] {
     const handoffsDir = this.getHandoffsPath();
@@ -261,9 +284,27 @@ export class ScopedMemoryManager {
       return [];
     }
 
-    // Note: In real implementation, would scan directory
-    // For now, return empty array - to be enhanced
-    return [];
+    const pendingHandoffs: HandoffRecord[] = [];
+
+    try {
+      // Use native fs to list directory (FileSystem interface doesn't have readdirSync)
+      const files = fs.readdirSync(handoffsDir);
+
+      for (const file of files) {
+        if (!file.endsWith('.yaml') || file.startsWith('.')) continue;
+
+        const handoffId = file.replace('.yaml', '');
+        const record = this.loadHandoff(handoffId);
+
+        if (record && record.status === 'pending' && record.toAgent === agentId) {
+          pendingHandoffs.push(record);
+        }
+      }
+    } catch {
+      // Directory read error, return empty
+    }
+
+    return pendingHandoffs;
   }
 }
 
